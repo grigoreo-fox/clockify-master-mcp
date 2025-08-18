@@ -201,6 +201,70 @@ DISABLED_TOOLS=bulk_edit_time_entries,delete_time_entry
 MAX_TOOLS=15
 ```
 
+### **🛡️ Project Configuration Protections**
+
+When you configure specific projects (using `DEFAULT_PROJECT_ID` or `ALLOWED_PROJECTS`), the system automatically protects these projects from accidental damage:
+
+#### **🚫 Blocked Operations**
+
+These operations are completely prevented when they would affect your configured projects:
+
+- **`delete_project`** - Cannot delete configured projects
+- **`archive_project`** - Cannot archive configured projects
+- **`remove_user_from_project`** - Cannot remove users from configured projects
+- **`delete_client`** - Cannot delete clients that configured projects depend on
+- **`delete_task`** - Cannot delete tasks from configured projects
+- **`delete_workspace`** - Cannot delete workspaces containing configured projects
+- **`bulk_edit_time_entries`** - Cannot bulk-assign time entries TO configured projects
+
+#### **⚠️ Protected Operations with Warnings**
+
+These operations are allowed but generate warnings:
+
+- **`update_project`** - Warns when changing critical fields (name, client)
+- **`update_workspace`** - Warns about settings that could affect project functionality
+- **`delete_tag`** - Warns when deleting tags from workspaces with configured projects
+- **`bulk_edit_time_entries`** - Warns when bulk operations might affect configured projects
+
+#### **✅ Enhanced Operations**
+
+These operations are automatically improved:
+
+- **`update_time_entry`** - Automatically preserves existing project assignments to prevent validation errors
+
+#### **Configuration Examples**
+
+**Protect a specific default project:**
+
+```json
+{
+  "env": {
+    "CLOCKIFY_API_KEY": "your_api_key_here",
+    "DEFAULT_PROJECT_ID": "project-12345",
+    "DEFAULT_WORKSPACE_ID": "workspace-67890"
+  }
+}
+```
+
+**Restrict to only specific projects:**
+
+```json
+{
+  "env": {
+    "CLOCKIFY_API_KEY": "your_api_key_here",
+    "ALLOWED_PROJECTS": "proj-123,proj-456,proj-789"
+  }
+}
+```
+
+#### **Error Messages You Might See**
+
+- `"Cannot delete the configured default project. Please update your configuration first."`
+- `"Cannot remove users from a configured project. This could break access to required project functionality."`
+- `"Cannot delete client: The following configured projects depend on this client: Website Project, Mobile App."`
+
+These protections ensure your critical project configurations remain intact while still allowing full functionality for non-configured projects.
+
 ---
 
 ## 💡 Real Usage Examples
@@ -438,6 +502,93 @@ ALLOWED_WORKSPACES=workspace-id
 1. Check if you're looking in the correct workspace
 2. Verify date ranges (some tools filter by date)
 3. Ensure you have access to the specific project
+
+### **"Cannot delete/archive configured project" errors**
+
+These are protection features working as intended. When you configure specific projects (`DEFAULT_PROJECT_ID` or `ALLOWED_PROJECTS`), the system prevents accidental damage:
+
+- **To delete a configured project**: Remove it from your environment configuration first
+- **To archive a configured project**: Update your configuration to remove the restriction
+- **To delete clients/tasks**: Check if they're used by configured projects
+
+Example fix:
+
+```json
+{
+  "env": {
+    "CLOCKIFY_API_KEY": "your_api_key_here"
+    // Remove or change this line to allow deletion:
+    // "DEFAULT_PROJECT_ID": "project-12345"
+  }
+}
+```
+
+---
+
+## 📋 Environment Variables Reference
+
+### **Required**
+
+- **`CLOCKIFY_API_KEY`** - Your Clockify API key (required)
+
+### **Regional Settings**
+
+- **`CLOCKIFY_REGION`** - API region (`global`, `eu`, `us`) - default: `global`
+- **`CLOCKIFY_API_URL`** - Custom API URL (overrides region setting)
+
+### **Project Protection Settings**
+
+- **`DEFAULT_PROJECT_ID`** - Default project ID (enables protection for this project)
+- **`DEFAULT_WORKSPACE_ID`** - Default workspace ID (enables protection for this workspace)
+- **`ALLOWED_PROJECTS`** - Comma-separated list of allowed project IDs (enables protection)
+- **`ALLOWED_WORKSPACES`** - Comma-separated list of allowed workspace IDs
+
+### **Tool Filtering**
+
+- **`ENABLED_TOOL_CATEGORIES`** - Comma-separated categories: `user,workspace,project,client,timeEntry,tag,task,report,bulk,search,customField`
+- **`ENABLED_TOOLS`** - Comma-separated specific tool names
+- **`DISABLED_TOOLS`** - Comma-separated tools to exclude
+- **`MAX_TOOLS`** - Maximum number of tools to expose (default: unlimited)
+
+### **Operation Restrictions**
+
+- **`READ_ONLY`** - Set to `true` to prevent all write operations
+- **`ALLOW_TIME_ENTRY_CREATION`** - Allow creating time entries (default: `true`)
+- **`ALLOW_TIME_ENTRY_DELETION`** - Allow deleting time entries (default: `true`)
+- **`ALLOW_PROJECT_MANAGEMENT`** - Allow project operations (default: `true`)
+- **`ALLOW_CLIENT_MANAGEMENT`** - Allow client operations (default: `true`)
+- **`ALLOW_USER_MANAGEMENT`** - Allow user operations (default: `false`)
+
+### **Time Entry Restrictions**
+
+- **`ALLOW_FUTURE_TIME_ENTRIES`** - Allow future time entries (default: `false`)
+- **`ALLOW_PAST_TIME_ENTRIES_IN_DAYS`** - Days back to allow time entries (default: `30`)
+- **`MAX_TIME_ENTRY_DURATION`** - Maximum hours per time entry
+
+### **Performance & Caching**
+
+- **`CACHE_ENABLED`** - Enable response caching (default: `false`)
+- **`CACHE_TTL`** - Cache time-to-live in seconds
+- **`RATE_LIMIT`** - Requests per minute limit
+- **`LOG_LEVEL`** - Logging level (`debug`, `info`, `warn`, `error`)
+
+### **Complete Example**
+
+```json
+{
+  "env": {
+    "CLOCKIFY_API_KEY": "your_api_key_here",
+    "CLOCKIFY_REGION": "eu",
+    "DEFAULT_PROJECT_ID": "project-12345",
+    "DEFAULT_WORKSPACE_ID": "workspace-67890",
+    "ENABLED_TOOL_CATEGORIES": "user,workspace,timeEntry,project,report",
+    "MAX_TOOLS": "20",
+    "ALLOW_PAST_TIME_ENTRIES_IN_DAYS": "90",
+    "CACHE_ENABLED": "true",
+    "LOG_LEVEL": "info"
+  }
+}
+```
 
 ---
 
