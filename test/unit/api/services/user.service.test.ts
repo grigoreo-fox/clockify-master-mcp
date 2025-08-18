@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ClockifyApiClient } from '../../../../src/api/client.js';
 import { UserService } from '../../../../src/api/services/user.service.js';
 import { mockClockifyApi } from '../../../helpers/nockHelpers.js';
@@ -12,6 +12,10 @@ describe('UserService', () => {
     const client = new ClockifyApiClient('test-api-key-12345678');
     userService = new UserService(client);
     mockApi = mockClockifyApi();
+  });
+
+  afterEach(() => {
+    mockApi.cleanAll();
   });
 
   describe('getCurrentUser', () => {
@@ -29,7 +33,8 @@ describe('UserService', () => {
   describe('getUserById', () => {
     it('should get user by ID', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/users/user-123')
+        .get('/api/v1/workspaces/workspace-123/users/user-123')
+        .matchHeader('X-Api-Key', /.+/)
         .reply(200, mockUser);
       
       const user = await userService.getUserById('workspace-123', 'user-123');
@@ -41,7 +46,8 @@ describe('UserService', () => {
   describe('getAllUsers', () => {
     it('should get all users in workspace', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/users')
+        .get('/api/v1/workspaces/workspace-123/users')
+        .matchHeader('X-Api-Key', /.+/)
         .reply(200, [mockUser]);
       
       const users = await userService.getAllUsers('workspace-123');
@@ -52,7 +58,8 @@ describe('UserService', () => {
 
     it('should support query options', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/users')
+        .get('/api/v1/workspaces/workspace-123/users')
+        .matchHeader('X-Api-Key', /.+/)
         .query({
           email: 'test@example.com',
           status: 'ACTIVE',
@@ -73,7 +80,8 @@ describe('UserService', () => {
   describe('findUserByEmail', () => {
     it('should find user by email', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/users')
+        .get('/api/v1/workspaces/workspace-123/users')
+        .matchHeader('X-Api-Key', /.+/)
         .query({ email: 'test@example.com' })
         .reply(200, [mockUser]);
       
@@ -84,7 +92,8 @@ describe('UserService', () => {
 
     it('should return null if user not found', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/users')
+        .get('/api/v1/workspaces/workspace-123/users')
+        .matchHeader('X-Api-Key', /.+/)
         .query({ email: 'notfound@example.com' })
         .reply(200, []);
       
@@ -97,7 +106,7 @@ describe('UserService', () => {
   describe('findUserByName', () => {
     it('should find users by name partial match', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/users')
+        .get('/api/v1/workspaces/workspace-123/users')
         .reply(200, [
           mockUser,
           { ...mockUser, id: 'user-456', name: 'Another Test User' },
@@ -116,7 +125,7 @@ describe('UserService', () => {
       const updatedUser = { ...mockUser, name: 'Updated Name' };
       
       mockApi.scope
-        .put('/workspaces/workspace-123/users/user-123')
+        .put('/api/v1/workspaces/workspace-123/users/user-123')
         .reply(200, updatedUser);
       
       const result = await userService.updateUser('workspace-123', 'user-123', {
@@ -130,7 +139,7 @@ describe('UserService', () => {
   describe('workspace user management', () => {
     it('should add user to workspace', async () => {
       mockApi.scope
-        .post('/workspaces/workspace-123/users')
+        .post('/api/v1/workspaces/workspace-123/users')
         .reply(201, mockUser);
       
       const user = await userService.addUserToWorkspace('workspace-123', 'test@example.com');
@@ -140,7 +149,7 @@ describe('UserService', () => {
 
     it('should remove user from workspace', async () => {
       mockApi.scope
-        .delete('/workspaces/workspace-123/users/user-123')
+        .delete('/api/v1/workspaces/workspace-123/users/user-123')
         .reply(204);
       
       await expect(userService.removeUserFromWorkspace('workspace-123', 'user-123'))
@@ -149,7 +158,7 @@ describe('UserService', () => {
 
     it('should set user active status', async () => {
       mockApi.scope
-        .put('/workspaces/workspace-123/users/user-123/status')
+        .put('/api/v1/workspaces/workspace-123/users/user-123/status')
         .reply(200, { ...mockUser, status: 'INACTIVE' });
       
       const user = await userService.setUserActiveStatus('workspace-123', 'user-123', false);

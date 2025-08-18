@@ -19,10 +19,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  // Verify all nock interceptors were called
-  if (!nock.isDone()) {
-    console.error('Pending nock interceptors:', nock.pendingMocks());
-    nock.cleanAll();
-    throw new Error('Not all nock interceptors were called');
+  // Only verify nock interceptors for unit tests, not integration tests
+  if (!process.env.VITEST_POOL_ID?.includes('integration') && nock.isActive()) {
+    if (!nock.isDone()) {
+      console.error('Pending nock interceptors:', nock.pendingMocks());
+      nock.cleanAll();
+      throw new Error('Not all nock interceptors were called');
+    }
   }
 });

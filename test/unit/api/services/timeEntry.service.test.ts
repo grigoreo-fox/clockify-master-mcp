@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ClockifyApiClient } from '../../../../src/api/client.js';
 import { TimeEntryService } from '../../../../src/api/services/timeEntry.service.js';
 import { mockClockifyApi } from '../../../helpers/nockHelpers.js';
@@ -12,6 +12,10 @@ describe('TimeEntryService', () => {
     const client = new ClockifyApiClient('test-api-key-12345678');
     timeEntryService = new TimeEntryService(client);
     mockApi = mockClockifyApi();
+  });
+
+  afterEach(() => {
+    mockApi.cleanAll();
   });
 
   describe('createTimeEntry', () => {
@@ -40,7 +44,8 @@ describe('TimeEntryService', () => {
 
     it('should support filter options', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/user/user-123/time-entries')
+        .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
+        .matchHeader('X-Api-Key', /.+/)
         .query({
           start: '2025-01-18T00:00:00Z',
           end: '2025-01-18T23:59:59Z',
@@ -63,7 +68,8 @@ describe('TimeEntryService', () => {
   describe('getTimeEntryById', () => {
     it('should get time entry by ID', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/time-entries/entry-123')
+        .get('/api/v1/workspaces/workspace-123/time-entries/entry-123')
+        .matchHeader('X-Api-Key', /.+/)
         .reply(200, mockTimeEntry);
       
       const entry = await timeEntryService.getTimeEntryById('workspace-123', 'entry-123');
@@ -98,7 +104,8 @@ describe('TimeEntryService', () => {
   describe('stopRunningTimer', () => {
     it('should stop running timer', async () => {
       mockApi.scope
-        .patch('/workspaces/workspace-123/user/user-123/time-entries')
+        .patch('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
+        .matchHeader('X-Api-Key', /.+/)
         .reply(200, { ...mockTimeEntry, timeInterval: { ...mockTimeEntry.timeInterval, end: '2025-01-18T10:30:00Z' } });
       
       const entry = await timeEntryService.stopRunningTimer('workspace-123', 'user-123', {
@@ -114,7 +121,7 @@ describe('TimeEntryService', () => {
       const runningEntry = { ...mockTimeEntry, timeInterval: { ...mockTimeEntry.timeInterval, end: undefined } };
       
       mockApi.scope
-        .get('/workspaces/workspace-123/user/user-123/time-entries')
+        .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .query(true)
         .reply(200, [runningEntry]);
       
@@ -126,7 +133,7 @@ describe('TimeEntryService', () => {
 
     it('should return null if no running timer', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/user/user-123/time-entries')
+        .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .query(true)
         .reply(200, [mockTimeEntry]); // Entry with end time
       
@@ -139,7 +146,7 @@ describe('TimeEntryService', () => {
   describe('bulk operations', () => {
     it('should bulk edit time entries', async () => {
       mockApi.scope
-        .patch('/workspaces/workspace-123/time-entries/bulk')
+        .patch('/api/v1/workspaces/workspace-123/time-entries/bulk')
         .reply(200, { success: true });
       
       const result = await timeEntryService.bulkEditTimeEntries('workspace-123', ['entry-123', 'entry-456'], {
@@ -152,7 +159,7 @@ describe('TimeEntryService', () => {
 
     it('should bulk delete time entries', async () => {
       mockApi.scope
-        .post('/workspaces/workspace-123/time-entries/delete')
+        .post('/api/v1/workspaces/workspace-123/time-entries/delete')
         .reply(204);
       
       await expect(timeEntryService.bulkDeleteTimeEntries('workspace-123', ['entry-123', 'entry-456']))
@@ -163,7 +170,7 @@ describe('TimeEntryService', () => {
   describe('duplicateTimeEntry', () => {
     it('should duplicate time entry', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/time-entries/entry-123')
+        .get('/api/v1/workspaces/workspace-123/time-entries/entry-123')
         .reply(200, mockTimeEntry);
       
       mockApi.mockCreateTimeEntry('workspace-123');
@@ -178,7 +185,7 @@ describe('TimeEntryService', () => {
   describe('date range helpers', () => {
     it('should get today time entries', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/user/user-123/time-entries')
+        .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .query(query => {
           // Check that start and end are for today
           const start = new Date(query.start as string);
@@ -197,7 +204,7 @@ describe('TimeEntryService', () => {
 
     it('should get week time entries', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/user/user-123/time-entries')
+        .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .query(query => {
           // Verify we're getting a week range
           const start = new Date(query.start as string);
@@ -215,7 +222,7 @@ describe('TimeEntryService', () => {
 
     it('should get month time entries', async () => {
       mockApi.scope
-        .get('/workspaces/workspace-123/user/user-123/time-entries')
+        .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .query(query => {
           // Verify we're getting a month range
           const start = new Date(query.start as string);

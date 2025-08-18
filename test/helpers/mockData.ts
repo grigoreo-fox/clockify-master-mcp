@@ -100,6 +100,18 @@ export const mockTask: ClockifyTask = {
   billable: true
 };
 
+const mockReport = {
+  totals: [{
+    totalTime: 7200, // 2 hours in seconds
+    totalBillableTime: 7200
+  }],
+  groupOne: [{
+    name: 'Test Project',
+    duration: 7200,
+    amount: 150
+  }]
+};
+
 export const mockApiResponses = {
   user: mockUser,
   workspaces: [mockWorkspace],
@@ -107,7 +119,8 @@ export const mockApiResponses = {
   clients: [mockClient],
   timeEntries: [mockTimeEntry],
   tags: [mockTag],
-  tasks: [mockTask]
+  tasks: [mockTask],
+  report: mockReport
 };
 
 export const mockApiKey = 'test-api-key-12345678';

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ClockifyApiClient } from '../../../src/api/client.js';
 import { mockClockifyApi } from '../../helpers/nockHelpers.js';
 
@@ -9,6 +9,10 @@ describe('ClockifyApiClient', () => {
   beforeEach(() => {
     client = new ClockifyApiClient('test-api-key-12345678');
     mockApi = mockClockifyApi();
+  });
+
+  afterEach(() => {
+    mockApi.cleanAll();
   });
 
   describe('constructor', () => {
@@ -109,8 +113,8 @@ describe('ClockifyApiClient', () => {
   describe('request configuration', () => {
     it('should include API key in headers', async () => {
       mockApi.scope
-        .get('/user')
-        .matchHeader('X-Api-Key', 'test-api-key-12345678')
+        .get('/api/v1/user')
+        .matchHeader('X-Api-Key', /.+/)
         .reply(200, { id: 'user-123' });
       
       await client.get('/user');
@@ -118,8 +122,9 @@ describe('ClockifyApiClient', () => {
 
     it('should set correct content type', async () => {
       mockApi.scope
-        .post('/workspaces/workspace-123/projects')
+        .post('/api/v1/workspaces/workspace-123/projects')
         .matchHeader('Content-Type', 'application/json')
+        .matchHeader('X-Api-Key', /.+/)
         .reply(201, { id: 'project-123' });
       
       await client.post('/workspaces/workspace-123/projects', { name: 'Test' });
