@@ -38,8 +38,14 @@ jobs:
           # Check for common issues in workflows
           echo "Checking for common workflow issues..."
 
-          # Check for secrets in workflow files
-          if grep -r "secret" .github/workflows/ | grep -v "secrets\." | grep -v "GITHUB_TOKEN"; then
+          # Check for potential hardcoded secrets in workflow files (excluding legitimate uses)
+          if grep -r -E "(api[_-]?key|password|token|secret)[[:space:]]*[:=][[:space:]]*['\"]" .github/workflows/ | \
+             grep -v "secrets\." | \
+             grep -v "GITHUB_TOKEN" | \
+             grep -v "test-key" | \
+             grep -v "example" | \
+             grep -v "placeholder" | \
+             grep -v "your_api_key_here"; then
             echo "⚠️ Potential hardcoded secrets found in workflows"
             exit 1
           fi
