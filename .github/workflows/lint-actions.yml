@@ -27,7 +27,7 @@ jobs:
       - name: Setup actionlint
         run: |
           # Install actionlint
-          bash <(curl https://raw.githubusercontent.com/rhymond/actionlint/main/scripts/download-actionlint.bash)
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
           sudo mv ./actionlint /usr/local/bin/
 
       - name: Run actionlint
