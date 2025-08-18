@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export interface ClockifyUser {
   id: string;
@@ -179,36 +179,36 @@ export interface ClockifyReportRequest {
     groups?: string[];
     sortColumn?: string;
   };
-  sortOrder?: "ASCENDING" | "DESCENDING";
+  sortOrder?: 'ASCENDING' | 'DESCENDING';
   exportType?: string;
   rounding?: boolean;
-  amountShown?: "HIDE_AMOUNT" | "EARNED" | "COST" | "PROFIT";
+  amountShown?: 'HIDE_AMOUNT' | 'EARNED' | 'COST' | 'PROFIT';
   users?: {
     ids?: string[];
-    contains?: "CONTAINS" | "DOES_NOT_CONTAIN";
-    status?: "ALL" | "ACTIVE" | "INACTIVE";
+    contains?: 'CONTAINS' | 'DOES_NOT_CONTAIN';
+    status?: 'ALL' | 'ACTIVE' | 'INACTIVE';
   };
   clients?: {
     ids?: string[];
-    contains?: "CONTAINS" | "DOES_NOT_CONTAIN";
-    status?: "ALL" | "ACTIVE" | "ARCHIVED";
+    contains?: 'CONTAINS' | 'DOES_NOT_CONTAIN';
+    status?: 'ALL' | 'ACTIVE' | 'ARCHIVED';
   };
   projects?: {
     ids?: string[];
-    contains?: "CONTAINS" | "DOES_NOT_CONTAIN";
-    status?: "ALL" | "ACTIVE" | "ARCHIVED";
+    contains?: 'CONTAINS' | 'DOES_NOT_CONTAIN';
+    status?: 'ALL' | 'ACTIVE' | 'ARCHIVED';
   };
   tasks?: {
     ids?: string[];
-    contains?: "CONTAINS" | "DOES_NOT_CONTAIN";
-    status?: "ALL" | "ACTIVE" | "DONE";
+    contains?: 'CONTAINS' | 'DOES_NOT_CONTAIN';
+    status?: 'ALL' | 'ACTIVE' | 'DONE';
   };
   tags?: {
     ids?: string[];
-    contains?: "CONTAINS" | "DOES_NOT_CONTAIN";
-    status?: "ALL" | "ACTIVE" | "ARCHIVED";
+    contains?: 'CONTAINS' | 'DOES_NOT_CONTAIN';
+    status?: 'ALL' | 'ACTIVE' | 'ARCHIVED';
   };
-  billable?: "BILLABLE" | "NON_BILLABLE" | "BOTH";
+  billable?: 'BILLABLE' | 'NON_BILLABLE' | 'BOTH';
   description?: string;
   withoutDescription?: boolean;
   userGroups?: string[];
@@ -245,7 +245,7 @@ export interface McpToolConfig<T = any> {
 
 export interface McpResponse {
   content: Array<{
-    type: "text" | "resource";
+    type: 'text' | 'resource';
     text?: string;
     resource?: any;
   }>;

@@ -9,21 +9,23 @@ describe('Tool Filtering', () => {
         apiKey: 'test-key',
         toolFiltering: {
           enabledCategories: ['user', 'workspace'],
-          maxTools: 50
-        }
+          maxTools: 50,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       // Should only include user and workspace tools
       expect(toolList.length).toBeGreaterThan(0);
       expect(toolList.length).toBeLessThanOrEqual(10); // Reasonable number for these categories
-      
+
       // Check that we have user tools
-      const userTools = toolList.filter(t => t.name.includes('user') || t.name === 'get_current_user');
+      const userTools = toolList.filter(
+        t => t.name.includes('user') || t.name === 'get_current_user'
+      );
       expect(userTools.length).toBeGreaterThan(0);
-      
+
       // Check that we have workspace tools
       const workspaceTools = toolList.filter(t => t.name.includes('workspace'));
       expect(workspaceTools.length).toBeGreaterThan(0);
@@ -31,12 +33,12 @@ describe('Tool Filtering', () => {
 
     it('should use default categories when none specified', () => {
       const config = new ConfigurationManager({
-        apiKey: 'test-key'
+        apiKey: 'test-key',
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       // Should include default categories: user, workspace, project, timeEntry, report
       expect(toolList.length).toBeGreaterThan(10);
       expect(toolList.length).toBeLessThanOrEqual(50); // Default max
@@ -47,20 +49,18 @@ describe('Tool Filtering', () => {
         apiKey: 'test-key',
         toolFiltering: {
           enabledCategories: ['timeEntry'],
-          maxTools: 10
-        }
+          maxTools: 10,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       expect(toolList.length).toBeLessThanOrEqual(10);
-      
+
       // Should include time entry tools
-      const timeEntryTools = toolList.filter(t => 
-        t.name.includes('time_entry') || 
-        t.name.includes('timer') || 
-        t.name.includes('entries')
+      const timeEntryTools = toolList.filter(
+        t => t.name.includes('time_entry') || t.name.includes('timer') || t.name.includes('entries')
       );
       expect(timeEntryTools.length).toBeGreaterThan(0);
     });
@@ -73,15 +73,15 @@ describe('Tool Filtering', () => {
         apiKey: 'test-key',
         toolFiltering: {
           enabledTools,
-          maxTools: 50
-        }
+          maxTools: 50,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       expect(toolList.length).toBe(enabledTools.length);
-      
+
       const toolNames = toolList.map(t => t.name);
       enabledTools.forEach(toolName => {
         expect(toolNames).toContain(toolName);
@@ -95,13 +95,13 @@ describe('Tool Filtering', () => {
         toolFiltering: {
           enabledCategories: ['user', 'workspace', 'timeEntry', 'bulk'],
           disabledTools,
-          maxTools: 50
-        }
+          maxTools: 50,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       const toolNames = toolList.map(t => t.name);
       disabledTools.forEach(toolName => {
         expect(toolNames).not.toContain(toolName);
@@ -114,14 +114,23 @@ describe('Tool Filtering', () => {
       const config = new ConfigurationManager({
         apiKey: 'test-key',
         toolFiltering: {
-          enabledCategories: ['user', 'workspace', 'project', 'timeEntry', 'report', 'client', 'tag', 'task'],
-          maxTools: 5
-        }
+          enabledCategories: [
+            'user',
+            'workspace',
+            'project',
+            'timeEntry',
+            'report',
+            'client',
+            'tag',
+            'task',
+          ],
+          maxTools: 5,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       expect(toolList.length).toBeLessThanOrEqual(5);
     });
 
@@ -130,15 +139,15 @@ describe('Tool Filtering', () => {
         apiKey: 'test-key',
         toolFiltering: {
           enabledCategories: ['user', 'workspace', 'timeEntry'],
-          maxTools: 3
-        }
+          maxTools: 3,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       expect(toolList.length).toBe(3);
-      
+
       // Should include high-priority tools
       const toolNames = toolList.map(t => t.name);
       expect(toolNames).toContain('get_current_user'); // High priority user tool
@@ -155,7 +164,7 @@ describe('Tool Filtering', () => {
 
     it('should return all available categories', () => {
       const categories = tools.getToolCategories();
-      
+
       expect(categories).toContain('user');
       expect(categories).toContain('workspace');
       expect(categories).toContain('project');
@@ -166,7 +175,7 @@ describe('Tool Filtering', () => {
 
     it('should return all available tool names', () => {
       const toolNames = tools.getAvailableToolNames();
-      
+
       expect(toolNames).toContain('get_current_user');
       expect(toolNames).toContain('list_workspaces');
       expect(toolNames).toContain('create_time_entry');
@@ -176,10 +185,10 @@ describe('Tool Filtering', () => {
     it('should return tools by category', () => {
       const userTools = tools.getToolsByCategory('user');
       const timeEntryTools = tools.getToolsByCategory('timeEntry');
-      
+
       expect(userTools).toContain('get_current_user');
       expect(userTools).toContain('list_users');
-      
+
       expect(timeEntryTools).toContain('create_time_entry');
       expect(timeEntryTools).toContain('get_time_entries');
     });
@@ -190,16 +199,22 @@ describe('Tool Filtering', () => {
       const config = new ConfigurationManager({
         apiKey: 'test-key',
         toolFiltering: {
-          enabledTools: ['get_current_user', 'list_workspaces', 'create_time_entry', 'stop_timer', 'get_today_entries'],
-          maxTools: 5
-        }
+          enabledTools: [
+            'get_current_user',
+            'list_workspaces',
+            'create_time_entry',
+            'stop_timer',
+            'get_today_entries',
+          ],
+          maxTools: 5,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       expect(toolList.length).toBe(5);
-      
+
       const toolNames = toolList.map(t => t.name);
       expect(toolNames).toContain('get_current_user');
       expect(toolNames).toContain('list_workspaces');
@@ -213,24 +228,24 @@ describe('Tool Filtering', () => {
         apiKey: 'test-key',
         toolFiltering: {
           enabledCategories: ['user', 'workspace', 'project', 'report'],
-          maxTools: 12
+          maxTools: 12,
         },
         restrictions: {
-          readOnly: true
-        }
+          readOnly: true,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       expect(toolList.length).toBeLessThanOrEqual(12);
-      
+
       const toolNames = toolList.map(t => t.name);
-      
+
       // Should have reporting tools
       const hasReportingTools = toolNames.some(name => name.includes('report'));
       expect(hasReportingTools).toBe(true);
-      
+
       // Should not have delete/create tools (due to category filtering)
       expect(toolNames).not.toContain('delete_time_entry');
       expect(toolNames).not.toContain('create_time_entry');
@@ -242,21 +257,21 @@ describe('Tool Filtering', () => {
         toolFiltering: {
           enabledCategories: ['user', 'workspace', 'project', 'timeEntry', 'report'],
           disabledTools: ['delete_time_entry', 'bulk_edit_time_entries'],
-          maxTools: 20
-        }
+          maxTools: 20,
+        },
       });
-      
+
       const tools = new ClockifyTools('test-key', config);
       const toolList = tools.getTools();
-      
+
       expect(toolList.length).toBeLessThanOrEqual(20);
-      
+
       const toolNames = toolList.map(t => t.name);
-      
+
       // Should exclude dangerous operations
       expect(toolNames).not.toContain('delete_time_entry');
       expect(toolNames).not.toContain('bulk_edit_time_entries');
-      
+
       // Should include core functionality
       expect(toolNames).toContain('get_current_user');
       expect(toolNames).toContain('create_time_entry');

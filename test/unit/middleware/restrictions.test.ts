@@ -24,8 +24,8 @@ describe('RestrictionMiddleware', () => {
         allowUserManagement: false,
         maxTimeEntryDuration: 8,
         allowFutureTimeEntries: false,
-        allowPastTimeEntriesInDays: 30
-      }
+        allowPastTimeEntriesInDays: 30,
+      },
     });
     middleware = new RestrictionMiddleware(config);
   });
@@ -36,13 +36,11 @@ describe('RestrictionMiddleware', () => {
     });
 
     it('should deny access to restricted projects', () => {
-      expect(() => middleware.checkProjectAccess('proj3'))
-        .toThrow(McpError);
+      expect(() => middleware.checkProjectAccess('proj3')).toThrow(McpError);
     });
 
     it('should deny access to non-allowed projects', () => {
-      expect(() => middleware.checkProjectAccess('proj999'))
-        .toThrow(McpError);
+      expect(() => middleware.checkProjectAccess('proj999')).toThrow(McpError);
     });
 
     it('should allow undefined project ID', () => {
@@ -56,8 +54,7 @@ describe('RestrictionMiddleware', () => {
     });
 
     it('should deny access to non-allowed workspaces', () => {
-      expect(() => middleware.checkWorkspaceAccess('ws999'))
-        .toThrow(McpError);
+      expect(() => middleware.checkWorkspaceAccess('ws999')).toThrow(McpError);
     });
 
     it('should allow undefined workspace ID', () => {
@@ -73,8 +70,7 @@ describe('RestrictionMiddleware', () => {
     });
 
     it('should deny restricted operations', () => {
-      expect(() => middleware.checkOperation('manageUser'))
-        .toThrow(McpError);
+      expect(() => middleware.checkOperation('manageUser')).toThrow(McpError);
     });
 
     it('should allow unknown operations by default', () => {
@@ -86,7 +82,7 @@ describe('RestrictionMiddleware', () => {
     beforeEach(() => {
       config = new ConfigurationManager({
         apiKey: 'test-key',
-        restrictions: { readOnly: true }
+        restrictions: { readOnly: true },
       });
       middleware = new RestrictionMiddleware(config);
     });
@@ -96,8 +92,7 @@ describe('RestrictionMiddleware', () => {
     });
 
     it('should deny write operations', () => {
-      expect(() => middleware.checkOperation('createTimeEntry'))
-        .toThrow(McpError);
+      expect(() => middleware.checkOperation('createTimeEntry')).toThrow(McpError);
     });
   });
 
@@ -105,30 +100,27 @@ describe('RestrictionMiddleware', () => {
     it('should allow valid dates', () => {
       const now = new Date().toISOString();
       const later = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 hours later
-      
+
       expect(() => middleware.checkTimeEntryDates(now, later)).not.toThrow();
     });
 
     it('should reject future dates when not allowed', () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      
-      expect(() => middleware.checkTimeEntryDates(tomorrow))
-        .toThrow(McpError);
+
+      expect(() => middleware.checkTimeEntryDates(tomorrow)).toThrow(McpError);
     });
 
     it('should reject dates exceeding max duration', () => {
       const start = new Date().toISOString();
       const end = new Date(Date.now() + 10 * 60 * 60 * 1000).toISOString(); // 10 hours later
-      
-      expect(() => middleware.checkTimeEntryDates(start, end))
-        .toThrow(McpError);
+
+      expect(() => middleware.checkTimeEntryDates(start, end)).toThrow(McpError);
     });
 
     it('should reject dates too far in the past', () => {
       const oldDate = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(); // 35 days ago
-      
-      expect(() => middleware.checkTimeEntryDates(oldDate))
-        .toThrow(McpError);
+
+      expect(() => middleware.checkTimeEntryDates(oldDate)).toThrow(McpError);
     });
   });
 
@@ -136,7 +128,7 @@ describe('RestrictionMiddleware', () => {
     it('should apply default workspace ID', () => {
       const params = { projectId: 'some-project' };
       const result = middleware.applyDefaults(params);
-      
+
       expect(result.workspaceId).toBe('default-ws');
       expect(result.projectId).toBe('some-project');
     });
@@ -144,7 +136,7 @@ describe('RestrictionMiddleware', () => {
     it('should apply default project ID', () => {
       const params = { workspaceId: 'some-workspace' };
       const result = middleware.applyDefaults(params);
-      
+
       expect(result.workspaceId).toBe('some-workspace');
       expect(result.projectId).toBe('default-proj');
     });
@@ -152,7 +144,7 @@ describe('RestrictionMiddleware', () => {
     it('should not override existing values', () => {
       const params = { workspaceId: 'existing-ws', projectId: 'existing-proj' };
       const result = middleware.applyDefaults(params);
-      
+
       expect(result.workspaceId).toBe('existing-ws');
       expect(result.projectId).toBe('existing-proj');
     });
@@ -163,12 +155,12 @@ describe('RestrictionMiddleware', () => {
       { id: 'proj1', name: 'Project 1' },
       { id: 'proj2', name: 'Project 2' },
       { id: 'proj3', name: 'Project 3' },
-      { id: 'proj4', name: 'Project 4' }
+      { id: 'proj4', name: 'Project 4' },
     ];
 
     it('should filter projects based on restrictions', () => {
       const filtered = middleware.filterProjects(projects);
-      
+
       expect(filtered).toHaveLength(2);
       expect(filtered.map(p => p.id)).toEqual(['proj1', 'proj2']);
     });
@@ -178,12 +170,12 @@ describe('RestrictionMiddleware', () => {
     const workspaces = [
       { id: 'ws1', name: 'Workspace 1' },
       { id: 'ws2', name: 'Workspace 2' },
-      { id: 'ws3', name: 'Workspace 3' }
+      { id: 'ws3', name: 'Workspace 3' },
     ];
 
     it('should filter workspaces based on restrictions', () => {
       const filtered = middleware.filterWorkspaces(workspaces);
-      
+
       expect(filtered).toHaveLength(2);
       expect(filtered.map(w => w.id)).toEqual(['ws1', 'ws2']);
     });
@@ -192,42 +184,38 @@ describe('RestrictionMiddleware', () => {
   describe('validateToolAccess', () => {
     it('should validate workspace and project access', () => {
       const params = { workspaceId: 'ws1', projectId: 'proj1' };
-      
+
       expect(() => middleware.validateToolAccess('get_project', params)).not.toThrow();
     });
 
     it('should reject invalid workspace access', () => {
       const params = { workspaceId: 'ws999', projectId: 'proj1' };
-      
-      expect(() => middleware.validateToolAccess('get_project', params))
-        .toThrow(McpError);
+
+      expect(() => middleware.validateToolAccess('get_project', params)).toThrow(McpError);
     });
 
     it('should check read-only mode for write operations', () => {
       config = new ConfigurationManager({
         apiKey: 'test-key',
-        restrictions: { readOnly: true }
+        restrictions: { readOnly: true },
       });
       middleware = new RestrictionMiddleware(config);
-      
-      expect(() => middleware.validateToolAccess('create_time_entry', {}))
-        .toThrow(McpError);
+
+      expect(() => middleware.validateToolAccess('create_time_entry', {})).toThrow(McpError);
     });
 
     it('should validate time entry dates for create operations', () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       const params = { start: tomorrow };
-      
-      expect(() => middleware.validateToolAccess('create_time_entry', params))
-        .toThrow(McpError);
+
+      expect(() => middleware.validateToolAccess('create_time_entry', params)).toThrow(McpError);
     });
 
     it('should check specific operation permissions', () => {
       const params = {};
-      
+
       expect(() => middleware.validateToolAccess('create_project', params)).not.toThrow();
-      expect(() => middleware.validateToolAccess('update_user', params))
-        .toThrow(McpError);
+      expect(() => middleware.validateToolAccess('update_user', params)).toThrow(McpError);
     });
   });
 });

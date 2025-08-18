@@ -3,7 +3,7 @@ name: CodeRabbit AI Code Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -13,13 +13,13 @@ jobs:
   coderabbit:
     name: CodeRabbit AI Review
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: CodeRabbit AI Review
         uses: coderabbitai/coderabbit-action@v2
         with:

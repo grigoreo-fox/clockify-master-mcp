@@ -1,17 +1,20 @@
-import { ClockifyApiClient } from "../client.js";
-import type { ClockifyClient } from "../../types/index.js";
+import { ClockifyApiClient } from '../client.js';
+import type { ClockifyClient } from '../../types/index.js';
 
 export class ClientService {
   constructor(private client: ClockifyApiClient) {}
 
-  async getAllClients(workspaceId: string, options?: {
-    name?: string;
-    archived?: boolean;
-    page?: number;
-    "page-size"?: number;
-    sortColumn?: string;
-    sortOrder?: "ASCENDING" | "DESCENDING";
-  }): Promise<ClockifyClient[]> {
+  async getAllClients(
+    workspaceId: string,
+    options?: {
+      name?: string;
+      archived?: boolean;
+      page?: number;
+      'page-size'?: number;
+      sortColumn?: string;
+      sortOrder?: 'ASCENDING' | 'DESCENDING';
+    }
+  ): Promise<ClockifyClient[]> {
     return this.client.get<ClockifyClient[]>(`/workspaces/${workspaceId}/clients`, options);
   }
 
@@ -19,22 +22,29 @@ export class ClientService {
     return this.client.get<ClockifyClient>(`/workspaces/${workspaceId}/clients/${clientId}`);
   }
 
-  async createClient(workspaceId: string, data: {
-    name: string;
-    address?: string;
-    note?: string;
-    email?: string;
-  }): Promise<ClockifyClient> {
+  async createClient(
+    workspaceId: string,
+    data: {
+      name: string;
+      address?: string;
+      note?: string;
+      email?: string;
+    }
+  ): Promise<ClockifyClient> {
     return this.client.post<ClockifyClient>(`/workspaces/${workspaceId}/clients`, data);
   }
 
-  async updateClient(workspaceId: string, clientId: string, data: {
-    name?: string;
-    address?: string;
-    note?: string;
-    email?: string;
-    archived?: boolean;
-  }): Promise<ClockifyClient> {
+  async updateClient(
+    workspaceId: string,
+    clientId: string,
+    data: {
+      name?: string;
+      address?: string;
+      note?: string;
+      email?: string;
+      archived?: boolean;
+    }
+  ): Promise<ClockifyClient> {
     return this.client.put<ClockifyClient>(`/workspaces/${workspaceId}/clients/${clientId}`, data);
   }
 

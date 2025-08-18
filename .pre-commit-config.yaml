@@ -12,7 +12,7 @@ repos:
       - id: check-json
         exclude: ^\.vscode/
       - id: check-yaml
-        args: ['--unsafe']  # Allow custom YAML tags
+        args: ['--unsafe'] # Allow custom YAML tags
       - id: check-toml
       - id: check-xml
       - id: mixed-line-ending
@@ -28,7 +28,7 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        types_or: [javascript, typescript, json, yaml, markdown]
+        types_or: [javascript, ts, json, yaml, markdown]
         exclude: |
           (?x)^(
               package-lock\.json|
@@ -44,7 +44,7 @@ repos:
         name: ESLint
         entry: npm run lint
         language: system
-        types: [typescript, javascript]
+        types: [ts, javascript]
         require_serial: true
         pass_filenames: false
 
@@ -55,7 +55,7 @@ repos:
         name: TypeScript Check
         entry: npm run typecheck
         language: system
-        types: [typescript]
+        types: [ts]
         require_serial: true
         pass_filenames: false
 
@@ -66,17 +66,17 @@ repos:
         name: Test Related Files
         entry: npm run test
         language: system
-        types: [typescript, javascript]
+        types: [ts, javascript]
         require_serial: true
         pass_filenames: false
         args: [--run, --reporter=verbose, --passWithNoTests]
 
   # Actionlint for GitHub Actions
-  - repo: https://github.com/rhymond/actionlint
-    rev: v1.7.4
-    hooks:
-      - id: actionlint
-        args: [-color, -verbose]
+  # - repo: https://github.com/rhymond/actionlint
+  #   rev: v1.7.4
+  #   hooks:
+  #     - id: actionlint
+  #       args: [-color, -verbose]
 
   # Security scanning
   - repo: https://github.com/Yelp/detect-secrets
@@ -111,7 +111,7 @@ repos:
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
-        args: [-e, SC1091]  # Ignore sourcing of non-existent files
+        args: [-e, SC1091] # Ignore sourcing of non-existent files
 
   # Python script linting (for our changelog generator)
   - repo: https://github.com/psf/black
@@ -134,7 +134,7 @@ repos:
 
 # Configure pre-commit behavior
 default_install_hook_types: [pre-commit, commit-msg, pre-push]
-default_stages: [commit]
+default_stages: [pre-commit]
 
 # Additional configuration
 minimum_pre_commit_version: '3.0.0'

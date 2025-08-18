@@ -21,21 +21,25 @@ npm run version:prerelease
 ## 📋 Release Types
 
 ### Patch Release (1.0.0 → 1.0.1)
+
 - **When**: Bug fixes, security patches, documentation updates
 - **Breaking**: No breaking changes
 - **Command**: `npm run version:patch`
 
 ### Minor Release (1.0.0 → 1.1.0)
+
 - **When**: New features, enhancements, new tool categories
 - **Breaking**: No breaking changes (backward compatible)
 - **Command**: `npm run version:minor`
 
 ### Major Release (1.0.0 → 2.0.0)
+
 - **When**: Breaking changes, API changes, major refactoring
 - **Breaking**: May include breaking changes
 - **Command**: `npm run version:major`
 
 ### Pre-release (1.0.0 → 1.1.0-alpha.1)
+
 - **When**: Testing new features, beta releases
 - **Breaking**: May include breaking changes
 - **Command**: `npm run version:prerelease`
@@ -46,9 +50,8 @@ npm run version:prerelease
 
 1. **Quality Checks** (`npm run ci:check`)
    - TypeScript compilation
-   - ESLint validation  
+   - ESLint validation
    - Full test suite with coverage
-   
 2. **Version Bump** (`npm version [type]`)
    - Updates `package.json` version
    - Updates `jsr.json` version automatically
@@ -72,8 +75,9 @@ npm run version:prerelease
 Release notes are automatically generated from git commits using conventional commit format:
 
 ### Commit Types:
+
 - `feat:` → ✨ Features
-- `fix:` → 🐛 Bug Fixes  
+- `fix:` → 🐛 Bug Fixes
 - `perf:` → ⚡ Performance Improvements
 - `refactor:` → ♻️ Code Refactoring
 - `docs:` → 📚 Documentation
@@ -81,6 +85,7 @@ Release notes are automatically generated from git commits using conventional co
 - `chore:` → 🔧 Maintenance
 
 ### Example Commits:
+
 ```bash
 feat: add bulk time entry operations
 fix: resolve authentication timeout issue
@@ -93,6 +98,7 @@ perf: optimize tool filtering performance
 If you need to perform a manual release:
 
 ### 1. Prepare Release
+
 ```bash
 # Ensure you're on main branch
 git checkout main
@@ -106,18 +112,21 @@ npm run changelog
 ```
 
 ### 2. Version and Tag
+
 ```bash
 # Choose appropriate version bump
 npm version patch  # or minor/major
 ```
 
 ### 3. Push Changes
+
 ```bash
 # Push commits and tags
 git push origin main --follow-tags
 ```
 
 ### 4. Monitor Automation
+
 - Check [GitHub Actions](https://github.com/hongkongkiwi/mcp-clockify/actions)
 - Verify [GitHub Release](https://github.com/hongkongkiwi/mcp-clockify/releases)
 - Confirm [NPM publication](https://www.npmjs.com/package/@hongkongkiwi/clockify-master-mcp)
@@ -126,12 +135,15 @@ git push origin main --follow-tags
 ## 🔧 Advanced Release Options
 
 ### Dry Run
+
 Test the release process without actually releasing:
+
 ```bash
 npm run release:dry
 ```
 
 ### Manual Registry Publishing
+
 If automated publishing fails:
 
 ```bash
@@ -141,11 +153,12 @@ npm run build
 # Publish to NPM
 npm run publish:npm
 
-# Publish to JSR  
+# Publish to JSR
 npm run publish:jsr
 ```
 
 ### Pre-release Workflow
+
 For alpha/beta releases:
 
 ```bash
@@ -161,6 +174,7 @@ npm run release:trigger
 ## 📊 Release Checklist
 
 ### Before Release:
+
 - [ ] All tests passing
 - [ ] Documentation updated
 - [ ] CHANGELOG.md reviewed
@@ -168,12 +182,14 @@ npm run release:trigger
 - [ ] Security scan clean
 
 ### During Release:
+
 - [ ] Version command executed successfully
 - [ ] Git tag created
 - [ ] Changes pushed to GitHub
 - [ ] GitHub Actions completed
 
 ### After Release:
+
 - [ ] GitHub release created
 - [ ] NPM package published
 - [ ] JSR package published
@@ -185,6 +201,7 @@ npm run release:trigger
 For critical security fixes or major bugs:
 
 ### Hotfix Process:
+
 1. Create hotfix branch from main
 2. Make minimal necessary changes
 3. Test thoroughly
@@ -206,12 +223,14 @@ npm run version:patch
 ## 🔍 Monitoring Releases
 
 ### Check Release Status:
+
 - **GitHub Actions**: [View workflows](https://github.com/hongkongkiwi/mcp-clockify/actions)
 - **NPM Package**: [View on NPM](https://www.npmjs.com/package/@hongkongkiwi/clockify-master-mcp)
 - **JSR Package**: [View on JSR](https://jsr.io/@hongkongkiwi/clockify-master-mcp)
 - **Download Stats**: Monitor adoption metrics
 
 ### Rollback Strategy:
+
 If a release has critical issues:
 
 1. **Immediate**: Deprecate problematic version on NPM
@@ -221,12 +240,14 @@ If a release has critical issues:
 ## 🤝 Community Releases
 
 ### Version Guidelines:
+
 - **Patch**: Weekly or as needed for bugs
-- **Minor**: Monthly for new features  
+- **Minor**: Monthly for new features
 - **Major**: Quarterly or for breaking changes
 - **Pre-release**: As needed for testing
 
 ### Communication:
+
 - GitHub Discussions for major releases
 - Twitter/Social media for significant updates
 - Documentation updates for all releases
@@ -236,21 +257,25 @@ If a release has critical issues:
 ### Common Issues:
 
 **Release workflow fails:**
+
 - Check GitHub Actions logs
 - Verify NPM_TOKEN secret is set
 - Ensure all tests pass locally
 
 **Version bump fails:**
+
 - Ensure working directory is clean
 - Check you're on main branch
 - Verify npm is authenticated
 
 **Publishing fails:**
+
 - Check registry credentials
 - Verify package.json configuration
 - Check for naming conflicts
 
 ### Getting Help:
+
 - Check [GitHub Issues](https://github.com/hongkongkiwi/mcp-clockify/issues)
 - Review [GitHub Discussions](https://github.com/hongkongkiwi/mcp-clockify/discussions)
 - Contact maintainers directly

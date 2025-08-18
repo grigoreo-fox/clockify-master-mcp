@@ -1,15 +1,18 @@
-import { ClockifyApiClient } from "../client.js";
-import type { ClockifyTag } from "../../types/index.js";
+import { ClockifyApiClient } from '../client.js';
+import type { ClockifyTag } from '../../types/index.js';
 
 export class TagService {
   constructor(private client: ClockifyApiClient) {}
 
-  async getAllTags(workspaceId: string, options?: {
-    name?: string;
-    archived?: boolean;
-    page?: number;
-    "page-size"?: number;
-  }): Promise<ClockifyTag[]> {
+  async getAllTags(
+    workspaceId: string,
+    options?: {
+      name?: string;
+      archived?: boolean;
+      page?: number;
+      'page-size'?: number;
+    }
+  ): Promise<ClockifyTag[]> {
     return this.client.get<ClockifyTag[]>(`/workspaces/${workspaceId}/tags`, options);
   }
 
@@ -17,16 +20,23 @@ export class TagService {
     return this.client.get<ClockifyTag>(`/workspaces/${workspaceId}/tags/${tagId}`);
   }
 
-  async createTag(workspaceId: string, data: {
-    name: string;
-  }): Promise<ClockifyTag> {
+  async createTag(
+    workspaceId: string,
+    data: {
+      name: string;
+    }
+  ): Promise<ClockifyTag> {
     return this.client.post<ClockifyTag>(`/workspaces/${workspaceId}/tags`, data);
   }
 
-  async updateTag(workspaceId: string, tagId: string, data: {
-    name?: string;
-    archived?: boolean;
-  }): Promise<ClockifyTag> {
+  async updateTag(
+    workspaceId: string,
+    tagId: string,
+    data: {
+      name?: string;
+      archived?: boolean;
+    }
+  ): Promise<ClockifyTag> {
     return this.client.put<ClockifyTag>(`/workspaces/${workspaceId}/tags/${tagId}`, data);
   }
 

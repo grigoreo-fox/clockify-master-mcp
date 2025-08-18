@@ -19,38 +19,38 @@ jobs:
   publish-jsr:
     name: Publish to JSR Registry
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: false
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Run tests
         run: pnpm run test:coverage
         env:
           CLOCKIFY_API_KEY: test-key-12345678
-          
+
       - name: Build package
         run: pnpm run build
-        
+
       - name: Setup Deno for JSR
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-          
+
       - name: Verify JSR configuration
         run: |
           if [ -f "jsr.json" ]; then
@@ -60,15 +60,15 @@ jobs:
             echo "❌ jsr.json not found - creating default"
             exit 1
           fi
-          
+
       - name: Publish to JSR (dry run)
         if: github.event.inputs.dry-run == 'true'
         run: pnpm dlx jsr publish --dry-run
-        
+
       - name: Publish to JSR
         if: github.event.inputs.dry-run != 'true'
         run: pnpm dlx jsr publish
-        
+
       - name: Get package info
         if: github.event.inputs.dry-run != 'true'
         id: package-info
@@ -81,7 +81,7 @@ jobs:
           echo "version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
           echo "jsr-scope=${JSR_SCOPE}" >> $GITHUB_OUTPUT
           echo "jsr-name=${JSR_NAME}" >> $GITHUB_OUTPUT
-          
+
       - name: Update GitHub release with JSR info
         if: github.event_name == 'release' && github.event.inputs.dry-run != 'true'
         uses: actions/github-script@v7
@@ -92,30 +92,30 @@ jobs:
               repo: context.repo.repo,
               release_id: context.payload.release.id
             });
-            
+
             const jsrScope = '${{ steps.package-info.outputs.jsr-scope }}';
             const jsrName = '${{ steps.package-info.outputs.jsr-name }}';
             const version = '${{ steps.package-info.outputs.version }}';
-            
+
             const updatedBody = release.body + `
-            
+
             ## 📦 JSR Publication
-            
+
             **JSR Package**: \`${jsrScope}/${jsrName}@${version}\`
-            
+
             ### Installation via JSR
             \`\`\`bash
             # Using Deno
             deno add ${jsrScope}/${jsrName}
-            
+
             # Using Node.js with JSR
             npx jsr add ${jsrScope}/${jsrName}
             \`\`\`
-            
+
             ### Documentation
             View on JSR: https://jsr.io/${jsrScope}/${jsrName}
             `;
-            
+
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: publish-jsr
     if: success() && github.event.inputs.dry-run != 'true'
-    
+
     steps:
       - name: Notify JSR deployment success
         run: |

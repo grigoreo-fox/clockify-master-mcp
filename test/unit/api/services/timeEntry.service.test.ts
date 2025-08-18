@@ -21,13 +21,13 @@ describe('TimeEntryService', () => {
   describe('createTimeEntry', () => {
     it('should create a time entry', async () => {
       mockApi.mockCreateTimeEntry('workspace-123');
-      
+
       const entry = await timeEntryService.createTimeEntry('workspace-123', {
         start: '2025-01-18T09:00:00Z',
         description: 'Test work',
-        projectId: 'project-123'
+        projectId: 'project-123',
       });
-      
+
       expect(entry).toEqual(mockTimeEntry);
     });
   });
@@ -35,9 +35,9 @@ describe('TimeEntryService', () => {
   describe('getTimeEntriesForUser', () => {
     it('should get time entries for user', async () => {
       mockApi.mockGetTimeEntries('workspace-123', 'user-123');
-      
+
       const entries = await timeEntryService.getTimeEntriesForUser('workspace-123', 'user-123');
-      
+
       expect(entries).toHaveLength(1);
       expect(entries[0]).toEqual(mockTimeEntry);
     });
@@ -50,17 +50,17 @@ describe('TimeEntryService', () => {
           start: '2025-01-18T00:00:00Z',
           end: '2025-01-18T23:59:59Z',
           project: 'project-123',
-          description: 'test'
+          description: 'test',
         })
         .reply(200, [mockTimeEntry]);
-      
+
       const entries = await timeEntryService.getTimeEntriesForUser('workspace-123', 'user-123', {
         start: '2025-01-18T00:00:00Z',
         end: '2025-01-18T23:59:59Z',
         project: 'project-123',
-        description: 'test'
+        description: 'test',
       });
-      
+
       expect(entries).toHaveLength(1);
     });
   });
@@ -71,9 +71,9 @@ describe('TimeEntryService', () => {
         .get('/api/v1/workspaces/workspace-123/time-entries/entry-123')
         .matchHeader('X-Api-Key', /.+/)
         .reply(200, mockTimeEntry);
-      
+
       const entry = await timeEntryService.getTimeEntryById('workspace-123', 'entry-123');
-      
+
       expect(entry).toEqual(mockTimeEntry);
     });
   });
@@ -81,13 +81,13 @@ describe('TimeEntryService', () => {
   describe('updateTimeEntry', () => {
     it('should update time entry', async () => {
       const updatedEntry = { ...mockTimeEntry, description: 'Updated work' };
-      
+
       mockApi.mockUpdateTimeEntry('workspace-123', 'entry-123');
-      
+
       const entry = await timeEntryService.updateTimeEntry('workspace-123', 'entry-123', {
-        description: 'Updated work'
+        description: 'Updated work',
       });
-      
+
       expect(entry).toEqual(mockTimeEntry);
     });
   });
@@ -95,9 +95,10 @@ describe('TimeEntryService', () => {
   describe('deleteTimeEntry', () => {
     it('should delete time entry', async () => {
       mockApi.mockDeleteTimeEntry('workspace-123', 'entry-123');
-      
-      await expect(timeEntryService.deleteTimeEntry('workspace-123', 'entry-123'))
-        .resolves.not.toThrow();
+
+      await expect(
+        timeEntryService.deleteTimeEntry('workspace-123', 'entry-123')
+      ).resolves.not.toThrow();
     });
   });
 
@@ -106,27 +107,33 @@ describe('TimeEntryService', () => {
       mockApi.scope
         .patch('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .matchHeader('X-Api-Key', /.+/)
-        .reply(200, { ...mockTimeEntry, timeInterval: { ...mockTimeEntry.timeInterval, end: '2025-01-18T10:30:00Z' } });
-      
+        .reply(200, {
+          ...mockTimeEntry,
+          timeInterval: { ...mockTimeEntry.timeInterval, end: '2025-01-18T10:30:00Z' },
+        });
+
       const entry = await timeEntryService.stopRunningTimer('workspace-123', 'user-123', {
-        end: '2025-01-18T10:30:00Z'
+        end: '2025-01-18T10:30:00Z',
       });
-      
+
       expect(entry.timeInterval.end).toBe('2025-01-18T10:30:00Z');
     });
   });
 
   describe('getRunningTimeEntry', () => {
     it('should get running time entry', async () => {
-      const runningEntry = { ...mockTimeEntry, timeInterval: { ...mockTimeEntry.timeInterval, end: undefined } };
-      
+      const runningEntry = {
+        ...mockTimeEntry,
+        timeInterval: { ...mockTimeEntry.timeInterval, end: undefined },
+      };
+
       mockApi.scope
         .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .query(true)
         .reply(200, [runningEntry]);
-      
+
       const entry = await timeEntryService.getRunningTimeEntry('workspace-123', 'user-123');
-      
+
       expect(entry).toEqual(runningEntry);
       expect(entry?.timeInterval.end).toBeUndefined();
     });
@@ -136,9 +143,9 @@ describe('TimeEntryService', () => {
         .get('/api/v1/workspaces/workspace-123/user/user-123/time-entries')
         .query(true)
         .reply(200, [mockTimeEntry]); // Entry with end time
-      
+
       const entry = await timeEntryService.getRunningTimeEntry('workspace-123', 'user-123');
-      
+
       expect(entry).toBeNull();
     });
   });
@@ -148,22 +155,25 @@ describe('TimeEntryService', () => {
       mockApi.scope
         .patch('/api/v1/workspaces/workspace-123/time-entries/bulk')
         .reply(200, { success: true });
-      
-      const result = await timeEntryService.bulkEditTimeEntries('workspace-123', ['entry-123', 'entry-456'], {
-        billable: true,
-        projectId: 'project-123'
-      });
-      
+
+      const result = await timeEntryService.bulkEditTimeEntries(
+        'workspace-123',
+        ['entry-123', 'entry-456'],
+        {
+          billable: true,
+          projectId: 'project-123',
+        }
+      );
+
       expect(result).toEqual({ success: true });
     });
 
     it('should bulk delete time entries', async () => {
-      mockApi.scope
-        .post('/api/v1/workspaces/workspace-123/time-entries/delete')
-        .reply(204);
-      
-      await expect(timeEntryService.bulkDeleteTimeEntries('workspace-123', ['entry-123', 'entry-456']))
-        .resolves.not.toThrow();
+      mockApi.scope.post('/api/v1/workspaces/workspace-123/time-entries/delete').reply(204);
+
+      await expect(
+        timeEntryService.bulkDeleteTimeEntries('workspace-123', ['entry-123', 'entry-456'])
+      ).resolves.not.toThrow();
     });
   });
 
@@ -172,11 +182,11 @@ describe('TimeEntryService', () => {
       mockApi.scope
         .get('/api/v1/workspaces/workspace-123/time-entries/entry-123')
         .reply(200, mockTimeEntry);
-      
+
       mockApi.mockCreateTimeEntry('workspace-123');
-      
+
       const duplicated = await timeEntryService.duplicateTimeEntry('workspace-123', 'entry-123');
-      
+
       expect(duplicated.description).toBe(mockTimeEntry.description);
       expect(duplicated.projectId).toBe(mockTimeEntry.projectId);
     });
@@ -191,14 +201,16 @@ describe('TimeEntryService', () => {
           const start = new Date(query.start as string);
           const end = new Date(query.end as string);
           const today = new Date();
-          
-          return start.toDateString() === today.toDateString() &&
-                 end.toDateString() === new Date(today.getTime() + 24*60*60*1000).toDateString();
+
+          return (
+            start.toDateString() === today.toDateString() &&
+            end.toDateString() === new Date(today.getTime() + 24 * 60 * 60 * 1000).toDateString()
+          );
         })
         .reply(200, [mockTimeEntry]);
-      
+
       const entries = await timeEntryService.getTodayTimeEntries('workspace-123', 'user-123');
-      
+
       expect(entries).toHaveLength(1);
     });
 
@@ -210,13 +222,13 @@ describe('TimeEntryService', () => {
           const start = new Date(query.start as string);
           const end = new Date(query.end as string);
           const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-          
+
           return diffDays === 7;
         })
         .reply(200, [mockTimeEntry]);
-      
+
       const entries = await timeEntryService.getWeekTimeEntries('workspace-123', 'user-123');
-      
+
       expect(entries).toHaveLength(1);
     });
 
@@ -227,14 +239,16 @@ describe('TimeEntryService', () => {
           // Verify we're getting a month range
           const start = new Date(query.start as string);
           const end = new Date(query.end as string);
-          
-          return start.getDate() === 1 && // First day of month
-                 end.getDate() === new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate(); // Last day of month
+
+          return (
+            start.getDate() === 1 && // First day of month
+            end.getDate() === new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate()
+          ); // Last day of month
         })
         .reply(200, [mockTimeEntry]);
-      
+
       const entries = await timeEntryService.getMonthTimeEntries('workspace-123', 'user-123');
-      
+
       expect(entries).toHaveLength(1);
     });
   });

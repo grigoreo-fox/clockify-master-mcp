@@ -1,4 +1,12 @@
-import { ClockifyUser, ClockifyWorkspace, ClockifyProject, ClockifyClient, ClockifyTimeEntry, ClockifyTag, ClockifyTask } from '../../src/types/index.js';
+import {
+  ClockifyUser,
+  ClockifyWorkspace,
+  ClockifyProject,
+  ClockifyClient,
+  ClockifyTimeEntry,
+  ClockifyTag,
+  ClockifyTask,
+} from '../../src/types/index.js';
 
 export const mockUser: ClockifyUser = {
   id: 'user-123',
@@ -11,8 +19,8 @@ export const mockUser: ClockifyUser = {
     weekStart: 'MONDAY',
     timeZone: 'UTC',
     timeFormat: 'HOUR24',
-    dateFormat: 'DD/MM/YYYY'
-  }
+    dateFormat: 'DD/MM/YYYY',
+  },
 };
 
 export const mockWorkspace: ClockifyWorkspace = {
@@ -20,15 +28,15 @@ export const mockWorkspace: ClockifyWorkspace = {
   name: 'Test Workspace',
   hourlyRate: {
     amount: 50,
-    currency: 'USD'
+    currency: 'USD',
   },
   workspaceSettings: {
     timeRoundingInReports: false,
     onlyAdminsSeeBillableRates: false,
     onlyAdminsCreateProject: false,
     onlyAdminsSeeDashboard: false,
-    defaultBillableProjects: true
-  }
+    defaultBillableProjects: true,
+  },
 };
 
 export const mockProject: ClockifyProject = {
@@ -43,8 +51,8 @@ export const mockProject: ClockifyProject = {
   clientId: 'client-123',
   hourlyRate: {
     amount: 75,
-    currency: 'USD'
-  }
+    currency: 'USD',
+  },
 };
 
 export const mockRestrictedProject: ClockifyProject = {
@@ -55,7 +63,7 @@ export const mockRestrictedProject: ClockifyProject = {
   color: '#FF0000',
   archived: false,
   template: false,
-  public: false
+  public: false,
 };
 
 export const mockClient: ClockifyClient = {
@@ -64,7 +72,7 @@ export const mockClient: ClockifyClient = {
   workspaceId: 'workspace-123',
   archived: false,
   email: 'client@example.com',
-  address: '123 Test St'
+  address: '123 Test St',
 };
 
 export const mockTimeEntry: ClockifyTimeEntry = {
@@ -76,18 +84,18 @@ export const mockTimeEntry: ClockifyTimeEntry = {
   timeInterval: {
     start: '2025-01-18T09:00:00Z',
     end: '2025-01-18T10:30:00Z',
-    duration: 'PT1H30M'
+    duration: 'PT1H30M',
   },
   workspaceId: 'workspace-123',
   isLocked: false,
-  tagIds: ['tag-123']
+  tagIds: ['tag-123'],
 };
 
 export const mockTag: ClockifyTag = {
   id: 'tag-123',
   name: 'Development',
   workspaceId: 'workspace-123',
-  archived: false
+  archived: false,
 };
 
 export const mockTask: ClockifyTask = {
@@ -97,19 +105,23 @@ export const mockTask: ClockifyTask = {
   status: 'ACTIVE',
   assigneeIds: ['user-123'],
   estimate: 'PT8H',
-  billable: true
+  billable: true,
 };
 
 const mockReport = {
-  totals: [{
-    totalTime: 7200, // 2 hours in seconds
-    totalBillableTime: 7200
-  }],
-  groupOne: [{
-    name: 'Test Project',
-    duration: 7200,
-    amount: 150
-  }]
+  totals: [
+    {
+      totalTime: 7200, // 2 hours in seconds
+      totalBillableTime: 7200,
+    },
+  ],
+  groupOne: [
+    {
+      name: 'Test Project',
+      duration: 7200,
+      amount: 150,
+    },
+  ],
 };
 
 export const mockApiResponses = {
@@ -120,7 +132,7 @@ export const mockApiResponses = {
   timeEntries: [mockTimeEntry],
   tags: [mockTag],
   tasks: [mockTask],
-  report: mockReport
+  report: mockReport,
 };
 
 export const mockApiKey = 'test-api-key-12345678';

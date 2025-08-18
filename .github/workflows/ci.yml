@@ -2,14 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - 'examples/**'
       - 'LICENSE'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -28,35 +28,35 @@ jobs:
   pre-commit:
     name: Pre-commit Hooks
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: false
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Install actionlint
         run: |
           bash <(curl https://raw.githubusercontent.com/rhymond/actionlint/main/scripts/download-actionlint.bash)
           sudo mv ./actionlint /usr/local/bin/
-          
+
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         env:
@@ -65,48 +65,48 @@ jobs:
   test:
     name: Test on Node.js ${{ matrix.node-version }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20]  # Only test LTS versions
-        os: [ubuntu-latest]     # Primary platform
+        node-version: [18, 20] # Only test LTS versions
+        os: [ubuntu-latest] # Primary platform
         include:
           # Test latest Node on multiple platforms
           - node-version: 20
             os: windows-latest
           - node-version: 20
             os: macos-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: false
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Run type checking
         run: pnpm run typecheck
-        
+
       - name: Run linting
         run: pnpm run lint
-        
+
       - name: Run tests
         run: pnpm run test:coverage
         env:
           CLOCKIFY_API_KEY: test-key-12345678
-          
+
       - name: Upload coverage reports to Codecov
         if: matrix.node-version == 20 && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4
@@ -115,7 +115,7 @@ jobs:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
           verbose: true
-          
+
       - name: Upload coverage reports to GitHub
         if: matrix.node-version == 20 && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
@@ -128,28 +128,28 @@ jobs:
     name: Build package
     runs-on: ubuntu-latest
     needs: [pre-commit, test]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: false
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Build package
         run: pnpm run build
-        
+
       - name: Test CLI executable
         run: |
           chmod +x ./dist/index.js
@@ -158,17 +158,17 @@ jobs:
           CLOCKIFY_API_KEY: test-key-12345678
           ENABLED_TOOL_CATEGORIES: user,workspace,timeEntry
           MAX_TOOLS: 8
-          
+
       - name: Test package integrity
         run: |
           # Create and test package tarball
           pnpm pack
           tar -tzf *.tgz | head -20
-          
+
           # Verify all required files are included
           echo "Checking required files in package..."
           tar -tzf *.tgz | grep -E "(package\.json|dist/index\.js|README\.md)" || exit 1
-          
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -183,18 +183,18 @@ jobs:
     name: Pull Request Checks
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Check PR title format
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           echo "PR Title: $PR_TITLE"
-          
+
           # Check if PR title follows conventional commits
           if echo "$PR_TITLE" | grep -E '^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)(\(.+\))?: .+'; then
             echo "✅ PR title follows conventional commits format"
@@ -202,12 +202,12 @@ jobs:
             echo "⚠️ PR title should follow conventional commits format"
             echo "Examples: feat: add new feature, fix: resolve bug, docs: update readme"
           fi
-          
+
       - name: Check for breaking changes
         run: |
           # Check if any files that could contain breaking changes were modified
           BREAKING_FILES=$(git diff --name-only origin/main...HEAD | grep -E "(src/|package\.json|tsconfig\.json)" || true)
-          
+
           if [ -n "$BREAKING_FILES" ]; then
             echo "Files that might contain breaking changes:"
             echo "$BREAKING_FILES"
@@ -223,29 +223,29 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: false
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Run npm audit
         run: npm audit --audit-level moderate
         continue-on-error: true
-        
+
       - name: Check for secrets in PR
         run: |
           # Simple check for common secret patterns

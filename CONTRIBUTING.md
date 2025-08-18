@@ -5,6 +5,7 @@ Thank you for your interest in contributing to Clockify Master MCP! This guide w
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - **Node.js** 18+ (LTS recommended)
 - **Python** 3.8+ (for pre-commit hooks)
 - **Git** 2.x
@@ -12,6 +13,7 @@ Thank you for your interest in contributing to Clockify Master MCP! This guide w
 ### Setup Development Environment
 
 1. **Clone and install**
+
    ```bash
    git clone https://github.com/hongkongkiwi/mcp-clockify.git
    cd mcp-clockify
@@ -19,18 +21,20 @@ Thank you for your interest in contributing to Clockify Master MCP! This guide w
    ```
 
 2. **Install pre-commit hooks** (Recommended)
+
    ```bash
    # Install pre-commit (one time)
    pip install pre-commit
-   
+
    # Install hooks for this project
    pre-commit install --install-hooks
-   
+
    # Install commit message hook
    pre-commit install --hook-type commit-msg
    ```
 
 3. **Set up environment**
+
    ```bash
    cp .env.example .env
    # Edit .env with your Clockify API key for testing
@@ -44,16 +48,18 @@ Thank you for your interest in contributing to Clockify Master MCP! This guide w
 ## 🔧 Development Workflow
 
 ### Pre-commit Hooks
+
 We use [pre-commit](https://pre-commit.com/) to ensure code quality. Hooks run automatically on every commit:
 
 - **Code formatting** with Prettier
 - **Linting** with ESLint
-- **Type checking** with TypeScript  
+- **Type checking** with TypeScript
 - **Security scanning** for secrets
 - **GitHub Actions** validation with actionlint
 - **Conventional commits** enforcement
 
 ### Manual Pre-commit Run
+
 ```bash
 # Run on all files
 pre-commit run --all-files
@@ -84,13 +90,14 @@ npm run ci:check        # Full CI checks
 
 # Release
 npm run version:patch   # Patch release (1.0.0 → 1.0.1)
-npm run version:minor   # Minor release (1.0.0 → 1.1.0)  
+npm run version:minor   # Minor release (1.0.0 → 1.1.0)
 npm run version:major   # Major release (1.0.0 → 2.0.0)
 ```
 
 ## 📝 Contribution Guidelines
 
 ### Commit Messages
+
 We use [Conventional Commits](https://conventionalcommits.org/):
 
 ```bash
@@ -102,8 +109,9 @@ refactor: improve code structure
 ```
 
 **Types:**
+
 - `feat`: New features
-- `fix`: Bug fixes  
+- `fix`: Bug fixes
 - `docs`: Documentation changes
 - `test`: Adding/updating tests
 - `refactor`: Code refactoring
@@ -114,6 +122,7 @@ refactor: improve code structure
 ### Pull Request Process
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feat/your-feature-name
    ```
@@ -124,11 +133,13 @@ refactor: improve code structure
    - Update documentation if needed
 
 3. **Test your changes**
+
    ```bash
    npm run ci:check
    ```
 
 4. **Commit and push**
+
    ```bash
    git add .
    git commit -m "feat: add awesome new feature"
@@ -151,7 +162,7 @@ refactor: improve code structure
 ### Testing
 
 - **Unit tests**: For individual functions
-- **Integration tests**: For tool interactions  
+- **Integration tests**: For tool interactions
 - **E2E tests**: For complete workflows
 - **Coverage**: Minimum 80% required
 
@@ -168,7 +179,7 @@ npm run test test/e2e/
 ├── src/
 │   ├── api/           # Clockify API client
 │   ├── config/        # Configuration management
-│   ├── middleware/    # Request middleware  
+│   ├── middleware/    # Request middleware
 │   ├── tools/         # MCP tool definitions
 │   └── types/         # TypeScript types
 ├── test/
@@ -182,12 +193,14 @@ npm run test test/e2e/
 ## 🎯 How to Contribute
 
 ### Reporting Bugs
+
 - Use [GitHub Issues](https://github.com/hongkongkiwi/mcp-clockify/issues)
 - Include reproduction steps
 - Provide environment details
 - Add relevant logs/screenshots
 
 ### Requesting Features
+
 - Check existing issues first
 - Describe the use case
 - Explain expected behavior
@@ -196,12 +209,14 @@ npm run test test/e2e/
 ### Contributing Code
 
 **Good first issues:**
+
 - Documentation improvements
 - Test coverage increases
 - Bug fixes with clear reproduction
 - Small feature additions
 
 **Advanced contributions:**
+
 - New tool categories
 - Performance optimizations
 - Security enhancements
@@ -232,6 +247,7 @@ Report security issues privately to the maintainers.
 ## 🙏 Recognition
 
 Contributors will be recognized in:
+
 - README.md contributors section
 - GitHub contributors graph
 - Release notes (for significant contributions)

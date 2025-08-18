@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 import {
   ClockifyApiClient,
   UserService,
@@ -8,11 +8,11 @@ import {
   TimeEntryService,
   TagService,
   TaskService,
-  ReportService
-} from "../api/services/index.js";
-import * as schemas from "./schemas.js";
-import { ConfigurationManager } from "../config/index.js";
-import { RestrictionMiddleware } from "../middleware/restrictions.js";
+  ReportService,
+} from '../api/services/index.js';
+import * as schemas from './schemas.js';
+import { ConfigurationManager } from '../config/index.js';
+import { RestrictionMiddleware } from '../middleware/restrictions.js';
 
 interface ToolDefinition {
   name: string;
@@ -53,338 +53,356 @@ export class ClockifyTools {
     return [
       // User Tools
       {
-        name: "get_current_user",
-        description: "Get information about the currently authenticated user",
-        category: "user",
+        name: 'get_current_user',
+        description: 'Get information about the currently authenticated user',
+        category: 'user',
         priority: 1,
         inputSchema: z.object({}),
         handler: async () => {
           const user = await this.userService.getCurrentUser();
           return { success: true, data: user };
-        }
+        },
       },
       {
-        name: "get_user",
-        description: "Get information about a specific user",
-        category: "user",
+        name: 'get_user',
+        description: 'Get information about a specific user',
+        category: 'user',
         priority: 3,
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe("The user ID")
+          userId: z.string().describe('The user ID'),
         }),
-        handler: async (input: z.infer<typeof schemas.workspaceIdSchema & typeof schemas.userIdSchema>) => {
+        handler: async (
+          input: z.infer<typeof schemas.workspaceIdSchema & typeof schemas.userIdSchema>
+        ) => {
           const user = await this.userService.getUserById(input.workspaceId, input.userId);
           return { success: true, data: user };
-        }
+        },
       },
       {
-        name: "list_users",
-        description: "List all users in a workspace",
-        category: "user",
+        name: 'list_users',
+        description: 'List all users in a workspace',
+        category: 'user',
         priority: 2,
         inputSchema: schemas.workspaceIdSchema.extend(schemas.searchUsersSchema.shape),
         handler: async (input: any) => {
           const users = await this.userService.getAllUsers(input.workspaceId, input);
           return { success: true, data: users };
-        }
+        },
       },
       {
-        name: "find_user_by_name",
-        description: "Find users by name (partial match)",
-        category: "search",
+        name: 'find_user_by_name',
+        description: 'Find users by name (partial match)',
+        category: 'search',
         priority: 5,
         inputSchema: schemas.workspaceIdSchema.extend({
-          name: z.string().describe("Name to search for (partial match)")
+          name: z.string().describe('Name to search for (partial match)'),
         }),
         handler: async (input: any) => {
           const users = await this.userService.findUserByName(input.workspaceId, input.name);
           return { success: true, data: users };
-        }
+        },
       },
 
       // Workspace Tools
       {
-        name: "list_workspaces",
-        description: "List all workspaces accessible to the user (filtered by restrictions)",
-        category: "workspace",
+        name: 'list_workspaces',
+        description: 'List all workspaces accessible to the user (filtered by restrictions)',
+        category: 'workspace',
         priority: 1,
         inputSchema: z.object({}),
         handler: async () => {
           const workspaces = await this.workspaceService.getAllWorkspaces();
           const filteredWorkspaces = this.restrictionMiddleware.filterWorkspaces(workspaces);
           return { success: true, data: filteredWorkspaces };
-        }
+        },
       },
       {
-        name: "get_workspace",
-        category: "workspace",
+        name: 'get_workspace',
+        category: 'workspace',
         priority: 2,
-        description: "Get details of a specific workspace",
+        description: 'Get details of a specific workspace',
         inputSchema: schemas.workspaceIdSchema,
         handler: async (input: z.infer<typeof schemas.workspaceIdSchema>) => {
           const workspace = await this.workspaceService.getWorkspaceById(input.workspaceId);
           return { success: true, data: workspace };
-        }
+        },
       },
 
       // Project Tools
       {
-        name: "list_projects",
-        category: "project",
+        name: 'list_projects',
+        category: 'project',
         priority: 1,
-        description: "List all projects in a workspace (filtered by restrictions)",
+        description: 'List all projects in a workspace (filtered by restrictions)',
         inputSchema: schemas.searchProjectsSchema,
         handler: async (input: z.infer<typeof schemas.searchProjectsSchema>) => {
           const projects = await this.projectService.getAllProjects(input.workspaceId, input);
           const filteredProjects = this.restrictionMiddleware.filterProjects(projects);
           return { success: true, data: filteredProjects };
-        }
+        },
       },
       {
-        name: "get_project",
-        category: "project",
+        name: 'get_project',
+        category: 'project',
         priority: 2,
-        description: "Get details of a specific project",
+        description: 'Get details of a specific project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe("The project ID")
+          projectId: z.string().describe('The project ID'),
         }),
         handler: async (input: any) => {
-          const project = await this.projectService.getProjectById(input.workspaceId, input.projectId);
+          const project = await this.projectService.getProjectById(
+            input.workspaceId,
+            input.projectId
+          );
           return { success: true, data: project };
-        }
+        },
       },
       {
-        name: "create_project",
-        category: "project",
+        name: 'create_project',
+        category: 'project',
         priority: 3,
-        description: "Create a new project",
+        description: 'Create a new project',
         inputSchema: schemas.createProjectSchema,
         handler: async (input: z.infer<typeof schemas.createProjectSchema>) => {
           const project = await this.projectService.createProject(input.workspaceId, input);
           return { success: true, data: project };
-        }
+        },
       },
       {
-        name: "update_project",
-        category: "project",
+        name: 'update_project',
+        category: 'project',
         priority: 4,
-        description: "Update an existing project",
+        description: 'Update an existing project',
         inputSchema: schemas.updateProjectSchema,
         handler: async (input: z.infer<typeof schemas.updateProjectSchema>) => {
           const { workspaceId, projectId, ...data } = input;
           const project = await this.projectService.updateProject(workspaceId, projectId, data);
           return { success: true, data: project };
-        }
+        },
       },
       {
-        name: "archive_project",
-        category: "project",
+        name: 'archive_project',
+        category: 'project',
         priority: 5,
-        description: "Archive a project",
+        description: 'Archive a project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe("The project ID to archive")
+          projectId: z.string().describe('The project ID to archive'),
         }),
         handler: async (input: any) => {
-          const project = await this.projectService.archiveProject(input.workspaceId, input.projectId);
+          const project = await this.projectService.archiveProject(
+            input.workspaceId,
+            input.projectId
+          );
           return { success: true, data: project };
-        }
+        },
       },
       {
-        name: "find_project_by_name",
-        category: "search",
+        name: 'find_project_by_name',
+        category: 'search',
         priority: 2,
-        description: "Find projects by name",
+        description: 'Find projects by name',
         inputSchema: schemas.workspaceIdSchema.extend({
-          name: z.string().describe("Project name to search for")
+          name: z.string().describe('Project name to search for'),
         }),
         handler: async (input: any) => {
-          const projects = await this.projectService.findProjectByName(input.workspaceId, input.name);
+          const projects = await this.projectService.findProjectByName(
+            input.workspaceId,
+            input.name
+          );
           return { success: true, data: projects };
-        }
+        },
       },
 
       // Client Tools
       {
-        name: "list_clients",
-        category: "client",
+        name: 'list_clients',
+        category: 'client',
         priority: 1,
-        description: "List all clients in a workspace",
+        description: 'List all clients in a workspace',
         inputSchema: schemas.workspaceIdSchema.extend({
-          archived: z.boolean().optional().describe("Include archived clients")
+          archived: z.boolean().optional().describe('Include archived clients'),
         }),
         handler: async (input: any) => {
           const clients = await this.clientService.getAllClients(input.workspaceId, input);
           return { success: true, data: clients };
-        }
+        },
       },
       {
-        name: "get_client",
-        category: "client",
+        name: 'get_client',
+        category: 'client',
         priority: 2,
-        description: "Get details of a specific client",
+        description: 'Get details of a specific client',
         inputSchema: schemas.workspaceIdSchema.extend({
-          clientId: z.string().describe("The client ID")
+          clientId: z.string().describe('The client ID'),
         }),
         handler: async (input: any) => {
           const client = await this.clientService.getClientById(input.workspaceId, input.clientId);
           return { success: true, data: client };
-        }
+        },
       },
       {
-        name: "create_client",
-        category: "client",
+        name: 'create_client',
+        category: 'client',
         priority: 3,
-        description: "Create a new client",
+        description: 'Create a new client',
         inputSchema: schemas.createClientSchema,
         handler: async (input: z.infer<typeof schemas.createClientSchema>) => {
           const { workspaceId, ...data } = input;
           const client = await this.clientService.createClient(workspaceId, data);
           return { success: true, data: client };
-        }
+        },
       },
       {
-        name: "update_client",
-        category: "client",
+        name: 'update_client',
+        category: 'client',
         priority: 4,
-        description: "Update an existing client",
+        description: 'Update an existing client',
         inputSchema: schemas.workspaceIdSchema.extend({
-          clientId: z.string().describe("The client ID"),
+          clientId: z.string().describe('The client ID'),
           name: z.string().optional(),
           email: z.string().email().optional(),
           address: z.string().optional(),
           note: z.string().optional(),
-          archived: z.boolean().optional()
+          archived: z.boolean().optional(),
         }),
         handler: async (input: any) => {
           const { workspaceId, clientId, ...data } = input;
           const client = await this.clientService.updateClient(workspaceId, clientId, data);
           return { success: true, data: client };
-        }
+        },
       },
 
       // Time Entry Tools
       {
-        name: "create_time_entry",
-        category: "timeEntry",
+        name: 'create_time_entry',
+        category: 'timeEntry',
         priority: 1,
-        description: "Create a new time entry (start tracking time)",
+        description: 'Create a new time entry (start tracking time)',
         inputSchema: schemas.createTimeEntrySchema,
         handler: async (input: z.infer<typeof schemas.createTimeEntrySchema>) => {
           const { workspaceId, ...data } = input;
           const entry = await this.timeEntryService.createTimeEntry(workspaceId, data);
           return { success: true, data: entry };
-        }
+        },
       },
       {
-        name: "update_time_entry",
-        category: "timeEntry",
+        name: 'update_time_entry',
+        category: 'timeEntry',
         priority: 3,
-        description: "Update an existing time entry",
+        description: 'Update an existing time entry',
         inputSchema: schemas.updateTimeEntrySchema,
         handler: async (input: z.infer<typeof schemas.updateTimeEntrySchema>) => {
           const { workspaceId, timeEntryId, ...data } = input;
           const entry = await this.timeEntryService.updateTimeEntry(workspaceId, timeEntryId, data);
           return { success: true, data: entry };
-        }
+        },
       },
       {
-        name: "delete_time_entry",
-        category: "timeEntry",
+        name: 'delete_time_entry',
+        category: 'timeEntry',
         priority: 4,
-        description: "Delete a time entry",
+        description: 'Delete a time entry',
         inputSchema: schemas.workspaceIdSchema.extend({
-          timeEntryId: z.string().describe("The time entry ID to delete")
+          timeEntryId: z.string().describe('The time entry ID to delete'),
         }),
         handler: async (input: any) => {
           await this.timeEntryService.deleteTimeEntry(input.workspaceId, input.timeEntryId);
-          return { success: true, message: "Time entry deleted successfully" };
-        }
+          return { success: true, message: 'Time entry deleted successfully' };
+        },
       },
       {
-        name: "get_time_entries",
-        category: "timeEntry",
+        name: 'get_time_entries',
+        category: 'timeEntry',
         priority: 2,
-        description: "Get time entries for a user",
+        description: 'Get time entries for a user',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe("The user ID"),
-          start: z.string().optional().describe("Start date in ISO format"),
-          end: z.string().optional().describe("End date in ISO format"),
-          projectId: z.string().optional().describe("Filter by project ID"),
-          description: z.string().optional().describe("Filter by description")
+          userId: z.string().describe('The user ID'),
+          start: z.string().optional().describe('Start date in ISO format'),
+          end: z.string().optional().describe('End date in ISO format'),
+          projectId: z.string().optional().describe('Filter by project ID'),
+          description: z.string().optional().describe('Filter by description'),
         }),
         handler: async (input: any) => {
           const { workspaceId, userId, projectId, ...options } = input;
           const entries = await this.timeEntryService.getTimeEntriesForUser(
-            workspaceId, 
+            workspaceId,
             userId,
             projectId ? { ...options, project: projectId } : options
           );
           return { success: true, data: entries };
-        }
+        },
       },
       {
-        name: "get_running_timer",
-        category: "timeEntry",
+        name: 'get_running_timer',
+        category: 'timeEntry',
         priority: 5,
-        description: "Get the currently running timer for a user",
+        description: 'Get the currently running timer for a user',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe("The user ID")
+          userId: z.string().describe('The user ID'),
         }),
         handler: async (input: any) => {
-          const entry = await this.timeEntryService.getRunningTimeEntry(input.workspaceId, input.userId);
+          const entry = await this.timeEntryService.getRunningTimeEntry(
+            input.workspaceId,
+            input.userId
+          );
           return { success: true, data: entry };
-        }
+        },
       },
       {
-        name: "stop_timer",
-        category: "timeEntry",
+        name: 'stop_timer',
+        category: 'timeEntry',
         priority: 6,
-        description: "Stop the currently running timer",
+        description: 'Stop the currently running timer',
         inputSchema: schemas.stopTimerSchema,
         handler: async (input: z.infer<typeof schemas.stopTimerSchema>) => {
           const userId = input.userId || (await this.userService.getCurrentUser()).id;
-          const entry = await this.timeEntryService.stopRunningTimer(
-            input.workspaceId,
-            userId,
-            { end: new Date().toISOString() }
-          );
+          const entry = await this.timeEntryService.stopRunningTimer(input.workspaceId, userId, {
+            end: new Date().toISOString(),
+          });
           return { success: true, data: entry };
-        }
+        },
       },
       {
-        name: "get_today_entries",
-        category: "timeEntry",
+        name: 'get_today_entries',
+        category: 'timeEntry',
         priority: 7,
-        description: "Get all time entries for today",
+        description: 'Get all time entries for today',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe("The user ID")
+          userId: z.string().describe('The user ID'),
         }),
         handler: async (input: any) => {
-          const entries = await this.timeEntryService.getTodayTimeEntries(input.workspaceId, input.userId);
+          const entries = await this.timeEntryService.getTodayTimeEntries(
+            input.workspaceId,
+            input.userId
+          );
           return { success: true, data: entries };
-        }
+        },
       },
       {
-        name: "get_week_entries",
-        category: "timeEntry",
+        name: 'get_week_entries',
+        category: 'timeEntry',
         priority: 8,
-        description: "Get all time entries for the current week",
+        description: 'Get all time entries for the current week',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe("The user ID")
+          userId: z.string().describe('The user ID'),
         }),
         handler: async (input: any) => {
-          const entries = await this.timeEntryService.getWeekTimeEntries(input.workspaceId, input.userId);
+          const entries = await this.timeEntryService.getWeekTimeEntries(
+            input.workspaceId,
+            input.userId
+          );
           return { success: true, data: entries };
-        }
+        },
       },
       {
-        name: "get_month_entries",
-        category: "timeEntry",
+        name: 'get_month_entries',
+        category: 'timeEntry',
         priority: 9,
-        description: "Get all time entries for a specific month",
+        description: 'Get all time entries for a specific month',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe("The user ID"),
-          year: z.number().optional().describe("Year (defaults to current year)"),
-          month: z.number().optional().describe("Month (0-11, defaults to current month)")
+          userId: z.string().describe('The user ID'),
+          year: z.number().optional().describe('Year (defaults to current year)'),
+          month: z.number().optional().describe('Month (0-11, defaults to current month)'),
         }),
         handler: async (input: any) => {
           const entries = await this.timeEntryService.getMonthTimeEntries(
@@ -394,162 +412,175 @@ export class ClockifyTools {
             input.month
           );
           return { success: true, data: entries };
-        }
+        },
       },
       {
-        name: "bulk_edit_time_entries",
-        category: "bulk",
+        name: 'bulk_edit_time_entries',
+        category: 'bulk',
         priority: 1,
-        description: "Bulk edit multiple time entries",
+        description: 'Bulk edit multiple time entries',
         inputSchema: schemas.bulkTimeEntriesSchema,
         handler: async (input: z.infer<typeof schemas.bulkTimeEntriesSchema>) => {
           const { workspaceId, timeEntryIds, action, updates } = input;
-          if (action === "DELETE") {
+          if (action === 'DELETE') {
             await this.timeEntryService.bulkDeleteTimeEntries(workspaceId, timeEntryIds);
-            return { success: true, message: "Time entries deleted successfully" };
+            return { success: true, message: 'Time entries deleted successfully' };
           } else {
-            const result = await this.timeEntryService.bulkEditTimeEntries(workspaceId, timeEntryIds, updates || {});
+            const result = await this.timeEntryService.bulkEditTimeEntries(
+              workspaceId,
+              timeEntryIds,
+              updates || {}
+            );
             return { success: true, data: result };
           }
-        }
+        },
       },
 
       // Tag Tools
       {
-        name: "list_tags",
-        category: "tag",
+        name: 'list_tags',
+        category: 'tag',
         priority: 1,
-        description: "List all tags in a workspace",
+        description: 'List all tags in a workspace',
         inputSchema: schemas.workspaceIdSchema.extend({
-          archived: z.boolean().optional().describe("Include archived tags")
+          archived: z.boolean().optional().describe('Include archived tags'),
         }),
         handler: async (input: any) => {
           const tags = await this.tagService.getAllTags(input.workspaceId, input);
           return { success: true, data: tags };
-        }
+        },
       },
       {
-        name: "create_tag",
-        category: "tag",
+        name: 'create_tag',
+        category: 'tag',
         priority: 2,
-        description: "Create a new tag",
+        description: 'Create a new tag',
         inputSchema: schemas.createTagSchema,
         handler: async (input: z.infer<typeof schemas.createTagSchema>) => {
           const { workspaceId, ...data } = input;
           const tag = await this.tagService.createTag(workspaceId, data);
           return { success: true, data: tag };
-        }
+        },
       },
       {
-        name: "create_multiple_tags",
-        category: "tag",
+        name: 'create_multiple_tags',
+        category: 'tag',
         priority: 3,
-        description: "Create multiple tags at once",
+        description: 'Create multiple tags at once',
         inputSchema: schemas.workspaceIdSchema.extend({
-          names: z.array(z.string()).describe("Array of tag names to create")
+          names: z.array(z.string()).describe('Array of tag names to create'),
         }),
         handler: async (input: any) => {
           const tags = await this.tagService.createMultipleTags(input.workspaceId, input.names);
           return { success: true, data: tags };
-        }
+        },
       },
 
       // Task Tools
       {
-        name: "list_tasks",
-        category: "task",
+        name: 'list_tasks',
+        category: 'task',
         priority: 1,
-        description: "List all tasks in a project",
+        description: 'List all tasks in a project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe("The project ID"),
-          isActive: z.boolean().optional().describe("Filter by active status")
+          projectId: z.string().describe('The project ID'),
+          isActive: z.boolean().optional().describe('Filter by active status'),
         }),
         handler: async (input: any) => {
-          const tasks = await this.taskService.getAllTasks(input.workspaceId, input.projectId, input);
+          const tasks = await this.taskService.getAllTasks(
+            input.workspaceId,
+            input.projectId,
+            input
+          );
           return { success: true, data: tasks };
-        }
+        },
       },
       {
-        name: "create_task",
-        category: "task",
+        name: 'create_task',
+        category: 'task',
         priority: 2,
-        description: "Create a new task in a project",
+        description: 'Create a new task in a project',
         inputSchema: schemas.createTaskSchema,
         handler: async (input: z.infer<typeof schemas.createTaskSchema>) => {
           const { workspaceId, projectId, ...data } = input;
           const task = await this.taskService.createTask(workspaceId, projectId, data);
           return { success: true, data: task };
-        }
+        },
       },
       {
-        name: "update_task",
-        category: "task",
+        name: 'update_task',
+        category: 'task',
         priority: 3,
-        description: "Update an existing task",
+        description: 'Update an existing task',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe("The project ID"),
-          taskId: z.string().describe("The task ID"),
+          projectId: z.string().describe('The project ID'),
+          taskId: z.string().describe('The task ID'),
           name: z.string().optional(),
           assigneeIds: z.array(z.string()).optional(),
           estimate: z.string().optional(),
-          status: z.enum(["ACTIVE", "DONE"]).optional(),
-          billable: z.boolean().optional()
+          status: z.enum(['ACTIVE', 'DONE']).optional(),
+          billable: z.boolean().optional(),
         }),
         handler: async (input: any) => {
           const { workspaceId, projectId, taskId, ...data } = input;
           const task = await this.taskService.updateTask(workspaceId, projectId, taskId, data);
           return { success: true, data: task };
-        }
+        },
       },
       {
-        name: "mark_task_done",
-        category: "task",
+        name: 'mark_task_done',
+        category: 'task',
         priority: 4,
-        description: "Mark a task as done",
+        description: 'Mark a task as done',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe("The project ID"),
-          taskId: z.string().describe("The task ID")
+          projectId: z.string().describe('The project ID'),
+          taskId: z.string().describe('The task ID'),
         }),
         handler: async (input: any) => {
-          const task = await this.taskService.markTaskAsDone(input.workspaceId, input.projectId, input.taskId);
+          const task = await this.taskService.markTaskAsDone(
+            input.workspaceId,
+            input.projectId,
+            input.taskId
+          );
           return { success: true, data: task };
-        }
+        },
       },
 
       // Report Tools
       {
-        name: "get_summary_report",
-        category: "report",
+        name: 'get_summary_report',
+        category: 'report',
         priority: 1,
-        description: "Generate a summary report",
+        description: 'Generate a summary report',
         inputSchema: schemas.reportRequestSchema,
         handler: async (input: z.infer<typeof schemas.reportRequestSchema>) => {
-          const { workspaceId, userIds, projectIds, clientIds, tagIds, groupBy, ...request } = input;
+          const { workspaceId, userIds, projectIds, clientIds, tagIds, groupBy, ...request } =
+            input;
           const reportRequest: any = {
             dateRangeStart: request.dateRangeStart,
             dateRangeEnd: request.dateRangeEnd,
-            billable: request.billable
+            billable: request.billable,
           };
-          
-          if (userIds) reportRequest.users = { ids: userIds, contains: "CONTAINS" };
-          if (projectIds) reportRequest.projects = { ids: projectIds, contains: "CONTAINS" };
-          if (clientIds) reportRequest.clients = { ids: clientIds, contains: "CONTAINS" };
-          if (tagIds) reportRequest.tags = { ids: tagIds, contains: "CONTAINS" };
+
+          if (userIds) reportRequest.users = { ids: userIds, contains: 'CONTAINS' };
+          if (projectIds) reportRequest.projects = { ids: projectIds, contains: 'CONTAINS' };
+          if (clientIds) reportRequest.clients = { ids: clientIds, contains: 'CONTAINS' };
+          if (tagIds) reportRequest.tags = { ids: tagIds, contains: 'CONTAINS' };
           if (groupBy) reportRequest.summaryFilter = { groups: groupBy };
-          
+
           const report = await this.reportService.getSummaryReport(workspaceId, reportRequest);
           return { success: true, data: report };
-        }
+        },
       },
       {
-        name: "get_user_productivity_report",
-        category: "report",
+        name: 'get_user_productivity_report',
+        category: 'report',
         priority: 2,
-        description: "Get productivity report for a specific user",
+        description: 'Get productivity report for a specific user',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe("The user ID"),
-          start: z.string().describe("Start date in ISO format"),
-          end: z.string().describe("End date in ISO format")
+          userId: z.string().describe('The user ID'),
+          start: z.string().describe('Start date in ISO format'),
+          end: z.string().describe('End date in ISO format'),
         }),
         handler: async (input: any) => {
           const report = await this.reportService.getUserProductivityReport(
@@ -558,17 +589,17 @@ export class ClockifyTools {
             { start: input.start, end: input.end }
           );
           return { success: true, data: report };
-        }
+        },
       },
       {
-        name: "get_project_progress_report",
-        category: "report",
+        name: 'get_project_progress_report',
+        category: 'report',
         priority: 3,
-        description: "Get progress report for a specific project",
+        description: 'Get progress report for a specific project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe("The project ID"),
-          start: z.string().describe("Start date in ISO format"),
-          end: z.string().describe("End date in ISO format")
+          projectId: z.string().describe('The project ID'),
+          start: z.string().describe('Start date in ISO format'),
+          end: z.string().describe('End date in ISO format'),
         }),
         handler: async (input: any) => {
           const report = await this.reportService.getProjectProgressReport(
@@ -577,78 +608,85 @@ export class ClockifyTools {
             { start: input.start, end: input.end }
           );
           return { success: true, data: report };
-        }
+        },
       },
       {
-        name: "get_team_utilization_report",
-        category: "report",
+        name: 'get_team_utilization_report',
+        category: 'report',
         priority: 4,
-        description: "Get team utilization report",
+        description: 'Get team utilization report',
         inputSchema: schemas.workspaceIdSchema.extend({
-          start: z.string().describe("Start date in ISO format"),
-          end: z.string().describe("End date in ISO format")
+          start: z.string().describe('Start date in ISO format'),
+          end: z.string().describe('End date in ISO format'),
         }),
         handler: async (input: any) => {
-          const report = await this.reportService.getTeamUtilizationReport(
-            input.workspaceId,
-            { start: input.start, end: input.end }
-          );
+          const report = await this.reportService.getTeamUtilizationReport(input.workspaceId, {
+            start: input.start,
+            end: input.end,
+          });
           return { success: true, data: report };
-        }
+        },
       },
       {
-        name: "export_report",
-        category: "report",
+        name: 'export_report',
+        category: 'report',
         priority: 5,
-        description: "Export a report in various formats",
+        description: 'Export a report in various formats',
         inputSchema: schemas.reportRequestSchema.extend({
-          format: z.enum(["CSV", "PDF", "EXCEL"]).describe("Export format")
+          format: z.enum(['CSV', 'PDF', 'EXCEL']).describe('Export format'),
         }),
         handler: async (input: any) => {
-          const { workspaceId, format, userIds, projectIds, clientIds, tagIds, groupBy, ...request } = input;
+          const {
+            workspaceId,
+            format,
+            userIds,
+            projectIds,
+            clientIds,
+            tagIds,
+            groupBy,
+            ...request
+          } = input;
           const reportRequest: any = {
             dateRangeStart: request.dateRangeStart,
             dateRangeEnd: request.dateRangeEnd,
-            billable: request.billable
+            billable: request.billable,
           };
-          
-          if (userIds) reportRequest.users = { ids: userIds, contains: "CONTAINS" };
-          if (projectIds) reportRequest.projects = { ids: projectIds, contains: "CONTAINS" };
-          if (clientIds) reportRequest.clients = { ids: clientIds, contains: "CONTAINS" };
-          if (tagIds) reportRequest.tags = { ids: tagIds, contains: "CONTAINS" };
+
+          if (userIds) reportRequest.users = { ids: userIds, contains: 'CONTAINS' };
+          if (projectIds) reportRequest.projects = { ids: projectIds, contains: 'CONTAINS' };
+          if (clientIds) reportRequest.clients = { ids: clientIds, contains: 'CONTAINS' };
+          if (tagIds) reportRequest.tags = { ids: tagIds, contains: 'CONTAINS' };
           if (groupBy) reportRequest.summaryFilter = { groups: groupBy };
-          
+
           const report = await this.reportService.exportReport(workspaceId, format, reportRequest);
           return { success: true, data: report };
-        }
-      }
+        },
+      },
     ];
   }
 
   private filterTools(allTools: ToolDefinition[]): ToolDefinition[] {
     const filtering = this.config.getToolFiltering();
-    
+
     // If specific tools are enabled, only include those
     if (filtering.enabledTools && filtering.enabledTools.length > 0) {
       const enabledSet = new Set(filtering.enabledTools);
-      return allTools
-        .filter(tool => enabledSet.has(tool.name))
-        .slice(0, filtering.maxTools);
+      return allTools.filter(tool => enabledSet.has(tool.name)).slice(0, filtering.maxTools);
     }
-    
+
     // Filter by categories
     const enabledCategories = new Set(filtering.enabledCategories);
     let filteredTools = allTools.filter(tool => enabledCategories.has(tool.category as any));
-    
+
     // Remove disabled tools
     if (filtering.disabledTools && filtering.disabledTools.length > 0) {
       const disabledSet = new Set(filtering.disabledTools);
       filteredTools = filteredTools.filter(tool => !disabledSet.has(tool.name));
     }
-    
+
     // Sort by priority (lower number = higher priority)
     filteredTools.sort((a, b) => (a.priority || 99) - (b.priority || 99));
-    
+
     // Limit to max tools
     return filteredTools.slice(0, filtering.maxTools);
   }
@@ -656,17 +694,28 @@ export class ClockifyTools {
   getTools() {
     const allTools = this.getAllTools();
     const filteredTools = this.filterTools(allTools);
-    
+
     return filteredTools.map(tool => ({
       name: tool.name,
       description: tool.description,
       inputSchema: tool.inputSchema,
-      handler: tool.handler
+      handler: tool.handler,
     }));
   }
 
   getToolCategories(): string[] {
-    return ["user", "workspace", "project", "client", "timeEntry", "tag", "task", "report", "bulk", "search"];
+    return [
+      'user',
+      'workspace',
+      'project',
+      'client',
+      'timeEntry',
+      'tag',
+      'task',
+      'report',
+      'bulk',
+      'search',
+    ];
   }
 
   getAvailableToolNames(): string[] {

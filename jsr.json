@@ -55,11 +55,6 @@
     "project-management"
   ],
   "publish": {
-    "include": [
-      "dist/",
-      "README.md",
-      "LICENSE",
-      "package.json"
-    ]
+    "include": ["dist/", "README.md", "LICENSE", "package.json"]
   }
 }

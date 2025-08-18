@@ -2,9 +2,9 @@ name: Pre-commit
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -16,35 +16,35 @@ jobs:
   pre-commit:
     name: Run Pre-commit Hooks
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: false
-          
+
       - name: Install Node.js dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Install actionlint
         run: |
           bash <(curl https://raw.githubusercontent.com/rhymond/actionlint/main/scripts/download-actionlint.bash)
           sudo mv ./actionlint /usr/local/bin/
-          
+
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         env:
@@ -54,37 +54,37 @@ jobs:
     name: Pre-commit CI Lite (PR only)
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: false
-          
+
       - name: Install Node.js dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Install actionlint
         run: |
           bash <(curl https://raw.githubusercontent.com/rhymond/actionlint/main/scripts/download-actionlint.bash)
           sudo mv ./actionlint /usr/local/bin/
-          
+
       - name: Run pre-commit on changed files
         uses: pre-commit/action@v3.0.1
         with:
@@ -96,7 +96,7 @@ jobs:
     name: Pre-commit Setup Guide
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.action == 'opened'
-    
+
     steps:
       - name: Comment setup instructions
         uses: actions/github-script@v7
@@ -109,7 +109,7 @@ jobs:
               creator: context.payload.pull_request.user.login,
               state: 'all'
             });
-            
+
             if (prs.length === 1) {
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
@@ -117,37 +117,37 @@ jobs:
                 repo: context.repo.repo,
                 body: `## 🔧 Pre-commit Setup Guide
 
-Welcome! This project uses [pre-commit](https://pre-commit.com/) for code quality. Here's how to set it up:
+                Welcome! This project uses [pre-commit](https://pre-commit.com/) for code quality. Here's how to set it up:
 
-### Quick Setup
-\`\`\`bash
-# Install pre-commit (one time)
-pip install pre-commit
+                ### Quick Setup
+                \`\`\`bash
+                # Install pre-commit (one time)
+                pip install pre-commit
 
-# Install hooks for this repo (one time)
-pre-commit install --install-hooks
+                # Install hooks for this repo (one time)
+                pre-commit install --install-hooks
 
-# Optional: Install commit-msg hook for conventional commits
-pre-commit install --hook-type commit-msg
-\`\`\`
+                # Optional: Install commit-msg hook for conventional commits
+                pre-commit install --hook-type commit-msg
+                \`\`\`
 
-### What it does:
-- ✅ **Code formatting** with Prettier
-- 🔍 **Linting** with ESLint  
-- 📝 **Type checking** with TypeScript
-- 🔒 **Security scanning** for secrets
-- 📋 **GitHub Actions** validation
-- 💬 **Conventional commits** enforcement
+                ### What it does:
+                - ✅ **Code formatting** with Prettier
+                - 🔍 **Linting** with ESLint
+                - 📝 **Type checking** with TypeScript
+                - 🔒 **Security scanning** for secrets
+                - 📋 **GitHub Actions** validation
+                - 💬 **Conventional commits** enforcement
 
-### Manual run (optional):
-\`\`\`bash
-# Run on all files
-pre-commit run --all-files
+                ### Manual run (optional):
+                \`\`\`bash
+                # Run on all files
+                pre-commit run --all-files
 
-# Run on specific files
-pre-commit run --files src/index.ts
-\`\`\`
+                # Run on specific files
+                pre-commit run --files src/index.ts
+                \`\`\`
 
-Pre-commit will now run automatically on every commit! 🚀`
+                Pre-commit will now run automatically on every commit! 🚀`
               });
             }
