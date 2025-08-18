@@ -77,10 +77,12 @@ jobs:
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           JSR_SCOPE=$(node -p "require('./jsr.json').name.split('/')[0]")
           JSR_NAME=$(node -p "require('./jsr.json').name.split('/')[1]")
-          echo "npm-name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
-          echo "jsr-scope=${JSR_SCOPE}" >> $GITHUB_OUTPUT
-          echo "jsr-name=${JSR_NAME}" >> $GITHUB_OUTPUT
+          {
+            echo "npm-name=${PACKAGE_NAME}"
+            echo "version=${PACKAGE_VERSION}"
+            echo "jsr-scope=${JSR_SCOPE}"
+            echo "jsr-name=${JSR_NAME}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Update GitHub release with JSR info
         if: github.event_name == 'release' && github.event.inputs.dry-run != 'true'

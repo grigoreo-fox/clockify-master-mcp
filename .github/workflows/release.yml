@@ -54,9 +54,11 @@ jobs:
             fi
           fi
 
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "is-prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+          {
+            echo "version=${VERSION}"
+            echo "tag=${TAG}"
+            echo "is-prerelease=${IS_PRERELEASE}"
+          } >> "$GITHUB_OUTPUT"
 
           echo "📦 Version: ${VERSION}"
           echo "🏷️ Tag: ${TAG}"
@@ -139,7 +141,7 @@ jobs:
 
           # Generate changelog
           if [ -n "$PREVIOUS_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD --grep="feat\|fix\|docs\|refactor\|perf\|test" --grep="Merge" --invert-grep)
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" "${PREVIOUS_TAG}"..HEAD --grep="feat\|fix\|docs\|refactor\|perf\|test" --grep="Merge" --invert-grep)
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" --grep="feat\|fix\|docs\|refactor\|perf\|test" --grep="Merge" --invert-grep)
           fi
@@ -173,9 +175,11 @@ jobs:
           FORMATTED_CHANGELOG+='```'
 
           # Save to output (handle multiline)
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$FORMATTED_CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "changelog<<EOF"
+            echo "$FORMATTED_CHANGELOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
   create-release:
     name: Create GitHub Release

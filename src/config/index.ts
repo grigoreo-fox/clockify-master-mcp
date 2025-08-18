@@ -56,7 +56,16 @@ export const ConfigSchema = z.object({
         .default(30)
         .describe('How many days in the past time entries can be created/edited'),
     })
-    .default({}),
+    .default(() => ({
+      readOnly: false,
+      allowTimeEntryCreation: true,
+      allowTimeEntryDeletion: true,
+      allowProjectManagement: true,
+      allowClientManagement: true,
+      allowUserManagement: false,
+      allowFutureTimeEntries: false,
+      allowPastTimeEntriesInDays: 30,
+    })),
 
   // Caching
   cacheEnabled: z.boolean().default(true).describe('Enable caching for API responses'),
@@ -95,7 +104,21 @@ export const ConfigSchema = z.object({
       disabledTools: z.array(z.string()).optional().describe('Specific tools to disable'),
       maxTools: z.number().default(50).describe('Maximum number of tools to expose'),
     })
-    .default({}),
+    .default(() => ({
+      enabledCategories: ['user', 'workspace', 'project', 'timeEntry', 'report'] as (
+        | 'user'
+        | 'workspace'
+        | 'project'
+        | 'client'
+        | 'timeEntry'
+        | 'tag'
+        | 'task'
+        | 'report'
+        | 'bulk'
+        | 'search'
+      )[],
+      maxTools: 50,
+    })),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

@@ -41,7 +41,8 @@ jobs:
         id: check
         run: |
           # Check if this is a tag push
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          REF="${{ github.ref }}"
+          if [[ "$REF" == "refs/tags/v"* ]]; then
             echo "Tag push detected"
             TAG="${{ github.ref_name }}"
             VERSION="${TAG#v}"
@@ -52,17 +53,19 @@ jobs:
               IS_PRERELEASE="true"
             fi
 
-            echo "should-release=true" >> $GITHUB_OUTPUT
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
-            echo "tag=${TAG}" >> $GITHUB_OUTPUT
-            echo "is-prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+            {
+              echo "should-release=true"
+              echo "version=${VERSION}"
+              echo "tag=${TAG}"
+              echo "is-prerelease=${IS_PRERELEASE}"
+            } >> "$GITHUB_OUTPUT"
 
             echo "🏷️ Release tag: ${TAG}"
             echo "📦 Version: ${VERSION}"
             echo "🚧 Pre-release: ${IS_PRERELEASE}"
           else
             echo "Not a tag push, skipping release"
-            echo "should-release=false" >> $GITHUB_OUTPUT
+            echo "should-release=false" >> "$GITHUB_OUTPUT"
           fi
 
   quality-gate:
@@ -153,7 +156,7 @@ jobs:
             echo "Generating changelog from $PREVIOUS_TAG to $TAG"
 
             # Get commits since last tag
-            COMMITS=$(git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD --grep="feat\|fix\|docs\|refactor\|perf\|test\|break" --grep="Merge\|bump\|version" --invert-grep)
+            COMMITS=$(git log --pretty=format:"- %s (%h)" "$PREVIOUS_TAG"..HEAD --grep="feat\|fix\|docs\|refactor\|perf\|test\|break" --grep="Merge\|bump\|version" --invert-grep)
 
             if [ -n "$COMMITS" ]; then
               CHANGELOG="## What's Changed"$'\n\n'"$COMMITS"$'\n\n'
@@ -199,9 +202,11 @@ jobs:
           echo "$CHANGELOG" > release-notes.md
 
           # Set output for next step
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "changelog<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         id: create-release

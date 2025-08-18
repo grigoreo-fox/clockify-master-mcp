@@ -163,11 +163,11 @@ jobs:
         run: |
           # Create and test package tarball
           pnpm pack
-          tar -tzf *.tgz | head -20
+          tar -tzf ./*.tgz | head -20
 
           # Verify all required files are included
           echo "Checking required files in package..."
-          tar -tzf *.tgz | grep -E "(package\.json|dist/index\.js|README\.md)" || exit 1
+          tar -tzf ./*.tgz | grep -E "(package\.json|dist/index\.js|README\.md)" || exit 1
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -191,8 +191,9 @@ jobs:
           fetch-depth: 0
 
       - name: Check PR title format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
           echo "PR Title: $PR_TITLE"
 
           # Check if PR title follows conventional commits
