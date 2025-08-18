@@ -1,0 +1,132 @@
+name: Publish to JSR
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Perform a dry run (do not actually publish)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-jsr:
+    name: Publish to JSR Registry
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm run test:coverage
+        env:
+          CLOCKIFY_API_KEY: test-key-12345678
+          
+      - name: Build package
+        run: npm run build
+        
+      - name: Setup Deno for JSR
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+          
+      - name: Verify JSR configuration
+        run: |
+          if [ -f "jsr.json" ]; then
+            echo "✅ JSR configuration found"
+            cat jsr.json
+          else
+            echo "❌ jsr.json not found - creating default"
+            exit 1
+          fi
+          
+      - name: Publish to JSR (dry run)
+        if: github.event.inputs.dry-run == 'true'
+        run: npx jsr publish --dry-run
+        
+      - name: Publish to JSR
+        if: github.event.inputs.dry-run != 'true'
+        run: npx jsr publish
+        
+      - name: Get package info
+        if: github.event.inputs.dry-run != 'true'
+        id: package-info
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          JSR_SCOPE=$(node -p "require('./jsr.json').name.split('/')[0]")
+          JSR_NAME=$(node -p "require('./jsr.json').name.split('/')[1]")
+          echo "npm-name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
+          echo "jsr-scope=${JSR_SCOPE}" >> $GITHUB_OUTPUT
+          echo "jsr-name=${JSR_NAME}" >> $GITHUB_OUTPUT
+          
+      - name: Update GitHub release with JSR info
+        if: github.event_name == 'release' && github.event.inputs.dry-run != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id
+            });
+            
+            const jsrScope = '${{ steps.package-info.outputs.jsr-scope }}';
+            const jsrName = '${{ steps.package-info.outputs.jsr-name }}';
+            const version = '${{ steps.package-info.outputs.version }}';
+            
+            const updatedBody = release.body + `
+            
+            ## 📦 JSR Publication
+            
+            **JSR Package**: \`${jsrScope}/${jsrName}@${version}\`
+            
+            ### Installation via JSR
+            \`\`\`bash
+            # Using Deno
+            deno add ${jsrScope}/${jsrName}
+            
+            # Using Node.js with JSR
+            npx jsr add ${jsrScope}/${jsrName}
+            \`\`\`
+            
+            ### Documentation
+            View on JSR: https://jsr.io/${jsrScope}/${jsrName}
+            `;
+            
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id,
+              body: updatedBody
+            });
+
+  notify-success:
+    name: Notify JSR Success
+    runs-on: ubuntu-latest
+    needs: publish-jsr
+    if: success() && github.event.inputs.dry-run != 'true'
+    
+    steps:
+      - name: Notify JSR deployment success
+        run: |
+          echo "✅ Successfully published Clockify Master MCP to JSR!"
+          echo "📦 Available on both NPM and JSR registries"
+          echo "🌐 JSR provides better TypeScript support and documentation"

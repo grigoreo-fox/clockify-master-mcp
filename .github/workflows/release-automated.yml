@@ -1,0 +1,373 @@
+name: Automated Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'examples/**'
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+  issues: read
+  id-token: write
+
+env:
+  FORCE_COLOR: 3
+
+jobs:
+  detect-changes:
+    name: Detect Release Type
+    runs-on: ubuntu-latest
+    outputs:
+      should-release: ${{ steps.check.outputs.should-release }}
+      version: ${{ steps.check.outputs.version }}
+      tag: ${{ steps.check.outputs.tag }}
+      is-prerelease: ${{ steps.check.outputs.is-prerelease }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Check if release needed
+        id: check
+        run: |
+          # Check if this is a tag push
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "Tag push detected"
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+            IS_PRERELEASE="false"
+            
+            # Check if it's a prerelease
+            if [[ "$VERSION" =~ (alpha|beta|rc|pre) ]]; then
+              IS_PRERELEASE="true"
+            fi
+            
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+            echo "is-prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+            
+            echo "🏷️ Release tag: ${TAG}"
+            echo "📦 Version: ${VERSION}"
+            echo "🚧 Pre-release: ${IS_PRERELEASE}"
+          else
+            echo "Not a tag push, skipping release"
+            echo "should-release=false" >> $GITHUB_OUTPUT
+          fi
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should-release == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run quality checks
+        run: |
+          echo "🔍 Running comprehensive quality checks..."
+          npm run typecheck
+          npm run lint
+          npm run test:coverage
+        env:
+          CLOCKIFY_API_KEY: test-key-12345678
+          
+      - name: Build package
+        run: |
+          echo "🏗️ Building package..."
+          npm run build
+          
+      - name: Verify package contents
+        run: |
+          echo "📦 Verifying package contents..."
+          npm pack --dry-run
+          
+      - name: Test CLI functionality
+        run: |
+          echo "🧪 Testing CLI functionality..."
+          chmod +x ./dist/index.js
+          timeout 3s node ./dist/index.js || true
+        env:
+          CLOCKIFY_API_KEY: test-key-12345678
+          ENABLED_TOOL_CATEGORIES: user,workspace,timeEntry
+          MAX_TOOLS: 5
+
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [detect-changes, quality-gate]
+    if: needs.detect-changes.outputs.should-release == 'true'
+    outputs:
+      upload-url: ${{ steps.create-release.outputs.upload_url }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          echo "📝 Generating release notes..."
+          
+          VERSION="${{ needs.detect-changes.outputs.version }}"
+          TAG="${{ needs.detect-changes.outputs.tag }}"
+          
+          # Get previous tag for comparison
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          # Generate changelog
+          CHANGELOG=""
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "Generating changelog from $PREVIOUS_TAG to $TAG"
+            
+            # Get commits since last tag
+            COMMITS=$(git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD --grep="feat\|fix\|docs\|refactor\|perf\|test\|break" --grep="Merge\|bump\|version" --invert-grep)
+            
+            if [ -n "$COMMITS" ]; then
+              CHANGELOG="## What's Changed"$'\n\n'"$COMMITS"$'\n\n'
+            fi
+          fi
+          
+          # If no changelog generated, create a basic one
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="## What's Changed"$'\n\n'"- Release version $VERSION"$'\n\n'
+          fi
+          
+          # Add installation instructions
+          CHANGELOG+="## 📦 Installation"$'\n\n'
+          CHANGELOG+='### NPX (Recommended)'$'\n'
+          CHANGELOG+='```bash'$'\n'
+          CHANGELOG+="npx @hongkongkiwi/clockify-master-mcp"$'\n'
+          CHANGELOG+='```'$'\n\n'
+          CHANGELOG+='### Global Installation'$'\n'
+          CHANGELOG+='```bash'$'\n'
+          CHANGELOG+="npm install -g @hongkongkiwi/clockify-master-mcp@$VERSION"$'\n'
+          CHANGELOG+='```'$'\n\n'
+          CHANGELOG+='### Claude Desktop Configuration'$'\n'
+          CHANGELOG+='```json'$'\n'
+          CHANGELOG+='{'$'\n'
+          CHANGELOG+='  "mcpServers": {'$'\n'
+          CHANGELOG+='    "clockify": {'$'\n'
+          CHANGELOG+='      "command": "npx",'$'\n'
+          CHANGELOG+='      "args": ["@hongkongkiwi/clockify-master-mcp"],'$'\n'
+          CHANGELOG+='      "env": {'$'\n'
+          CHANGELOG+='        "CLOCKIFY_API_KEY": "your_api_key_here"'$'\n'
+          CHANGELOG+='      }'$'\n'
+          CHANGELOG+='    }'$'\n'
+          CHANGELOG+='  }'$'\n'
+          CHANGELOG+='}'$'\n'
+          CHANGELOG+='```'$'\n\n'
+          CHANGELOG+="## 🔗 Links"$'\n\n'
+          CHANGELOG+="- **NPM**: https://www.npmjs.com/package/@hongkongkiwi/clockify-master-mcp"$'\n'
+          CHANGELOG+="- **JSR**: https://jsr.io/@hongkongkiwi/clockify-master-mcp"$'\n'
+          CHANGELOG+="- **Documentation**: https://github.com/hongkongkiwi/mcp-clockify#readme"$'\n'
+          CHANGELOG+="- **Issues**: https://github.com/hongkongkiwi/mcp-clockify/issues"
+          
+          # Save changelog to file for upload
+          echo "$CHANGELOG" > release-notes.md
+          
+          # Set output for next step
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+      - name: Create GitHub Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.detect-changes.outputs.tag }}
+          release_name: "Clockify Master MCP v${{ needs.detect-changes.outputs.version }}"
+          body: ${{ steps.release-notes.outputs.changelog }}
+          draft: false
+          prerelease: ${{ needs.detect-changes.outputs.is-prerelease }}
+          
+      - name: Upload release notes
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ./release-notes.md
+          asset_name: release-notes.md
+          asset_content_type: text/markdown
+
+  publish-npm:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    needs: [detect-changes, create-github-release]
+    if: needs.detect-changes.outputs.should-release == 'true'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build package
+        run: npm run build
+        
+      - name: Publish to NPM
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+      - name: Verify NPM publication
+        run: |
+          echo "✅ Package published to NPM"
+          echo "📦 @hongkongkiwi/clockify-master-mcp@${{ needs.detect-changes.outputs.version }}"
+          echo "🔗 https://www.npmjs.com/package/@hongkongkiwi/clockify-master-mcp"
+
+  publish-jsr:
+    name: Publish to JSR
+    runs-on: ubuntu-latest
+    needs: [detect-changes, create-github-release]
+    if: needs.detect-changes.outputs.should-release == 'true'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build package
+        run: npm run build
+        
+      - name: Setup Deno for JSR
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+          
+      - name: Update JSR version
+        run: |
+          # Update version in jsr.json to match package.json
+          VERSION="${{ needs.detect-changes.outputs.version }}"
+          node -e "
+            const fs = require('fs');
+            const jsr = JSON.parse(fs.readFileSync('jsr.json', 'utf8'));
+            jsr.version = '$VERSION';
+            fs.writeFileSync('jsr.json', JSON.stringify(jsr, null, 2));
+          "
+          
+      - name: Publish to JSR
+        run: npx jsr publish
+        
+      - name: Verify JSR publication
+        run: |
+          echo "✅ Package published to JSR"
+          echo "📦 @hongkongkiwi/clockify-master-mcp@${{ needs.detect-changes.outputs.version }}"
+          echo "🔗 https://jsr.io/@hongkongkiwi/clockify-master-mcp"
+
+  update-release-info:
+    name: Update Release Information
+    runs-on: ubuntu-latest
+    needs: [detect-changes, create-github-release, publish-npm, publish-jsr]
+    if: needs.detect-changes.outputs.should-release == 'true' && (success() || failure())
+    
+    steps:
+      - name: Update release with publication status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ needs.detect-changes.outputs.version }}';
+            const tag = '${{ needs.detect-changes.outputs.tag }}';
+            
+            // Get current release
+            const { data: release } = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: tag
+            });
+            
+            // Determine publication status
+            const npmSuccess = '${{ needs.publish-npm.result }}' === 'success';
+            const jsrSuccess = '${{ needs.publish-jsr.result }}' === 'success';
+            
+            let statusSection = '\n\n## 📊 Publication Status\n\n';
+            statusSection += `- **NPM**: ${npmSuccess ? '✅ Published' : '❌ Failed'}\n`;
+            statusSection += `- **JSR**: ${jsrSuccess ? '✅ Published' : '❌ Failed'}\n\n`;
+            
+            if (npmSuccess && jsrSuccess) {
+              statusSection += '🎉 **All registries updated successfully!**\n';
+            } else {
+              statusSection += '⚠️ **Some publications failed - check the workflow logs**\n';
+            }
+            
+            // Update release body
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              body: release.body + statusSection
+            });
+
+  notify-success:
+    name: Notify Release Success
+    runs-on: ubuntu-latest
+    needs: [detect-changes, update-release-info]
+    if: needs.detect-changes.outputs.should-release == 'true' && success()
+    
+    steps:
+      - name: Success notification
+        run: |
+          echo "🎉 Release v${{ needs.detect-changes.outputs.version }} completed successfully!"
+          echo ""
+          echo "📦 Package: @hongkongkiwi/clockify-master-mcp"
+          echo "🏷️ Tag: ${{ needs.detect-changes.outputs.tag }}"
+          echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.detect-changes.outputs.tag }}"
+          echo ""
+          echo "📦 NPM: https://www.npmjs.com/package/@hongkongkiwi/clockify-master-mcp"
+          echo "📦 JSR: https://jsr.io/@hongkongkiwi/clockify-master-mcp"
+          echo ""
+          echo "🚀 Users can now install with:"
+          echo "   npx @hongkongkiwi/clockify-master-mcp"

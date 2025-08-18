@@ -1,0 +1,194 @@
+name: Dependabot Auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  actions: read
+
+env:
+  FORCE_COLOR: 3
+
+jobs:
+  # Security updates - Immediate auto-merge
+  security-auto-merge:
+    name: Auto-merge Security Updates
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' && contains(github.event.pull_request.labels.*.name, 'security')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run security-focused tests
+        run: |
+          npm run typecheck
+          npm run lint
+          npm audit --audit-level moderate
+          npm run test
+        env:
+          CLOCKIFY_API_KEY: test-key-12345678
+          
+      - name: Auto-approve security updates
+        run: |
+          gh pr review --approve "$PR_URL"
+          echo "🔒 Auto-approved security update"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Auto-merge security updates
+        run: |
+          gh pr merge --auto --squash "$PR_URL"
+          echo "🚀 Auto-merged security update"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Notify security merge
+        run: |
+          gh pr comment "$PR_URL" --body "🔒 **Security Update Auto-merged**
+          
+          This security update for ${{ steps.metadata.outputs.dependency-names }} has been automatically merged.
+          
+          ✅ All tests passed
+          🔒 Security vulnerability addressed
+          📦 Version: ${{ steps.metadata.outputs.previous-version }} → ${{ steps.metadata.outputs.new-version }}
+          
+          **Next steps:**
+          - Monitor for any issues in production
+          - Consider releasing a patch version if this affects users"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Regular dependency updates
+  regular-auto-merge:
+    name: Auto-merge Regular Updates  
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' && !contains(github.event.pull_request.labels.*.name, 'security')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run comprehensive tests
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run test:coverage
+        env:
+          CLOCKIFY_API_KEY: test-key-12345678
+          
+      - name: Auto-approve and merge patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --squash "$PR_URL"
+          echo "✅ Auto-approved and merged patch update"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Auto-approve minor updates (manual merge)
+        if: steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr comment "$PR_URL" --body "✅ **Minor Update Auto-approved**
+          
+          This PR updates ${{ steps.metadata.outputs.dependency-names }} from ${{ steps.metadata.outputs.previous-version }} to ${{ steps.metadata.outputs.new-version }}.
+          
+          ✅ All tests are passing
+          📖 Please review the changelog for any notable changes
+          🚀 **Ready to merge** - add \`auto-merge\` label to merge automatically
+          
+          **Changes in this update:**
+          - Type: ${{ steps.metadata.outputs.update-type }}
+          - Package: ${{ steps.metadata.outputs.dependency-names }}
+          - Impact: Low risk, backward compatible"
+          echo "✅ Auto-approved minor update (manual merge required)"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Comment on major updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: |
+          gh pr comment "$PR_URL" --body "⚠️ **Major Version Update - Manual Review Required**
+          
+          This PR updates ${{ steps.metadata.outputs.dependency-names }} from ${{ steps.metadata.outputs.previous-version }} to ${{ steps.metadata.outputs.new-version }}.
+          
+          🚨 **Breaking changes possible** - thorough review needed
+          📖 **Action required**: Review changelog and documentation
+          🧪 **Testing**: Run additional integration tests
+          🔍 **Manual approval**: This PR requires manual review and approval
+          
+          **Review checklist:**
+          - [ ] Check changelog for breaking changes
+          - [ ] Verify API compatibility 
+          - [ ] Test with real Clockify integration
+          - [ ] Update documentation if needed
+          - [ ] Consider impact on users
+          
+          **Do not auto-merge major version updates**"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-merge-labeled:
+    name: Auto-merge labeled PRs
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' && contains(github.event.pull_request.labels.*.name, 'auto-merge')
+    
+    steps:
+      - name: Wait for CI to complete
+        uses: lewagon/wait-on-check-action@v1.3.3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: 'CI'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          
+      - name: Auto-merge PR
+        run: |
+          gh pr merge --auto --squash "$PR_URL"
+          echo "🚀 Auto-merged labeled PR"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

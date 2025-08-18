@@ -1,0 +1,25 @@
+# Build outputs
+dist/
+build/
+coverage/
+
+# Dependencies
+node_modules/
+
+# Generated files
+*.min.js
+*.bundle.js
+
+# Logs
+*.log
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Examples (external code)
+examples/
+
+# Temporary files
+.tmp/
+.cache/

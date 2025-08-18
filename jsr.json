@@ -1,0 +1,65 @@
+{
+  "name": "@hongkongkiwi/clockify-master-mcp",
+  "version": "1.0.0",
+  "description": "Clockify Master MCP - The most comprehensive Model Context Protocol server for Clockify time tracking with full API integration, advanced filtering, and enterprise features",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hongkongkiwi/mcp-clockify.git"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "exclude": [
+    "node_modules/",
+    "examples/",
+    "test/",
+    "coverage/",
+    "*.test.ts",
+    "*.config.*",
+    ".github/",
+    ".env*",
+    "scripts/"
+  ],
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "outDir": "dist"
+  },
+  "imports": {
+    "@modelcontextprotocol/sdk/server/index.js": "npm:@modelcontextprotocol/sdk@^1.13.2/server/index.js",
+    "@modelcontextprotocol/sdk/server/stdio.js": "npm:@modelcontextprotocol/sdk@^1.13.2/server/stdio.js",
+    "@modelcontextprotocol/sdk/types.js": "npm:@modelcontextprotocol/sdk@^1.13.2/types.js",
+    "axios": "npm:axios@^1.8.4",
+    "dotenv": "npm:dotenv@^16.5.0",
+    "zod": "npm:zod@^3.24.2"
+  },
+  "keywords": [
+    "mcp",
+    "clockify",
+    "time-tracking",
+    "model-context-protocol",
+    "api",
+    "productivity",
+    "claude",
+    "ai",
+    "automation",
+    "timesheet",
+    "reporting",
+    "project-management"
+  ],
+  "publish": {
+    "include": [
+      "dist/",
+      "README.md",
+      "LICENSE",
+      "package.json"
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+name: CodeRabbit AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coderabbit:
+    name: CodeRabbit AI Review
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: CodeRabbit AI Review
+        uses: coderabbitai/coderabbit-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-auto-review: true
+          enable-chat: true
+          review-level: 'detailed'
+          language: 'typescript'
+          exclude-patterns: |
+            **/*.md
+            **/*.json
+            **/dist/**
+            **/node_modules/**
+            **/examples/**
+            **/*.config.*
+          include-patterns: |
+            **/*.ts
+            **/*.js
+          custom-rules: |
+            - Focus on code security and potential vulnerabilities
+            - Check for proper error handling in async functions
+            - Verify TypeScript types are properly defined
+            - Ensure MCP protocol compliance
+            - Review API client implementation for best practices
+            - Check for proper environment variable handling
+            - Validate test coverage for new features
+            - Review documentation updates for API changes

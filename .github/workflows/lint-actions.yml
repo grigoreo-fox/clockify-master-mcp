@@ -1,0 +1,156 @@
+name: Lint GitHub Actions
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-actions:
+    name: Lint Workflow Files
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup actionlint
+        run: |
+          # Install actionlint
+          bash <(curl https://raw.githubusercontent.com/rhymond/actionlint/main/scripts/download-actionlint.bash)
+          sudo mv ./actionlint /usr/local/bin/
+          
+      - name: Run actionlint
+        run: actionlint -color -verbose
+        
+      - name: Check workflow syntax
+        run: |
+          # Check for common issues in workflows
+          echo "Checking for common workflow issues..."
+          
+          # Check for secrets in workflow files
+          if grep -r "secret" .github/workflows/ | grep -v "secrets\." | grep -v "GITHUB_TOKEN"; then
+            echo "⚠️ Potential hardcoded secrets found in workflows"
+            exit 1
+          fi
+          
+          # Check for proper permission settings
+          echo "Checking permission configurations..."
+          for file in .github/workflows/*.yml .github/workflows/*.yaml; do
+            if [ -f "$file" ]; then
+              if ! grep -q "permissions:" "$file"; then
+                echo "⚠️ $file: Consider adding explicit permissions"
+              fi
+            fi
+          done
+          
+      - name: Validate workflow structure
+        run: |
+          echo "Validating workflow structure..."
+          
+          # Check for required workflow elements
+          for file in .github/workflows/*.yml .github/workflows/*.yaml; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              
+              # Check for name
+              if ! grep -q "^name:" "$file"; then
+                echo "❌ $file: Missing workflow name"
+                exit 1
+              fi
+              
+              # Check for on trigger
+              if ! grep -q "^on:" "$file"; then
+                echo "❌ $file: Missing trigger configuration"
+                exit 1
+              fi
+              
+              # Check for jobs
+              if ! grep -q "^jobs:" "$file"; then
+                echo "❌ $file: Missing jobs section"
+                exit 1
+              fi
+              
+              echo "✅ $file: Structure is valid"
+            fi
+          done
+
+  test-workflows:
+    name: Test Workflow Syntax
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Test workflow parsing
+        run: |
+          # Use GitHub CLI to validate workflow syntax
+          for file in .github/workflows/*.yml .github/workflows/*.yaml; do
+            if [ -f "$file" ]; then
+              echo "Testing syntax for $file..."
+              # This will validate the YAML syntax
+              python3 -c "
+          import yaml
+          import sys
+          
+          try:
+              with open('$file', 'r') as f:
+                  yaml.safe_load(f)
+              print('✅ $file: Valid YAML syntax')
+          except yaml.YAMLError as e:
+              print(f'❌ $file: Invalid YAML syntax - {e}')
+              sys.exit(1)
+          except Exception as e:
+              print(f'❌ $file: Error - {e}')
+              sys.exit(1)
+          "
+            fi
+          done
+
+  security-check:
+    name: Security Check for Workflows
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Check for security issues
+        run: |
+          echo "Checking for security issues in workflows..."
+          
+          # Check for dangerous permissions
+          if grep -r "contents: write" .github/workflows/ | grep -v "dependabot\|release"; then
+            echo "⚠️ Found write permissions outside of dependabot/release workflows"
+          fi
+          
+          # Check for pull_request_target usage
+          if grep -r "pull_request_target" .github/workflows/; then
+            echo "⚠️ Found pull_request_target usage - ensure this is secure"
+            echo "Files using pull_request_target should:"
+            echo "1. Not checkout code from PR"
+            echo "2. Not run untrusted code"
+            echo "3. Validate inputs carefully"
+          fi
+          
+          # Check for actions pinning
+          echo "Checking action version pinning..."
+          UNPINNED=$(grep -r "uses:" .github/workflows/ | grep -v "@v[0-9]" | grep -v "@main" | grep -v "@master" | grep -v "# " || true)
+          if [ -n "$UNPINNED" ]; then
+            echo "⚠️ Found unpinned action versions:"
+            echo "$UNPINNED"
+            echo "Consider pinning actions to specific versions for security"
+          fi
+          
+          echo "✅ Security check completed"

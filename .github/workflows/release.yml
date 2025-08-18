@@ -1,0 +1,254 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is-prerelease: ${{ steps.version.outputs.is-prerelease }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG="v${VERSION}"
+            IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+          else
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+            # Check if it's a prerelease based on version pattern
+            if [[ "$VERSION" =~ (alpha|beta|rc|pre) ]]; then
+              IS_PRERELEASE="true"
+            else
+              IS_PRERELEASE="false"
+            fi
+          fi
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "is-prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+          
+          echo "📦 Version: ${VERSION}"
+          echo "🏷️ Tag: ${TAG}"
+          echo "🚧 Pre-release: ${IS_PRERELEASE}"
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: prepare-release
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run comprehensive tests
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run test:coverage
+        env:
+          CLOCKIFY_API_KEY: test-key-12345678
+          
+      - name: Build package
+        run: npm run build
+        
+      - name: Update package version
+        if: github.event_name == 'workflow_dispatch'
+        run: npm version ${{ needs.prepare-release.outputs.version }} --no-git-tag-version
+        
+      - name: Test package installation
+        run: |
+          npm pack
+          npm install -g ./hongkongkiwi-clockify-master-mcp-*.tgz
+          which clockify-master-mcp
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/
+            *.tgz
+          retention-days: 30
+
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: prepare-release
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG="${{ needs.prepare-release.outputs.tag }}"
+          
+          echo "Generating changelog from ${PREVIOUS_TAG} to ${CURRENT_TAG}"
+          
+          # Generate changelog
+          if [ -n "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD --grep="feat\|fix\|docs\|refactor\|perf\|test" --grep="Merge" --invert-grep)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --grep="feat\|fix\|docs\|refactor\|perf\|test" --grep="Merge" --invert-grep)
+          fi
+          
+          # Format changelog
+          FORMATTED_CHANGELOG="## What's Changed"$'\n\n'
+          
+          if [ -n "$CHANGELOG" ]; then
+            FORMATTED_CHANGELOG+="$CHANGELOG"$'\n\n'
+          else
+            FORMATTED_CHANGELOG+="- Initial release"$'\n\n'
+          fi
+          
+          FORMATTED_CHANGELOG+="## Installation"$'\n\n'
+          FORMATTED_CHANGELOG+='```bash'$'\n'
+          FORMATTED_CHANGELOG+='npm install -g @hongkongkiwi/clockify-master-mcp'$'\n'
+          FORMATTED_CHANGELOG+='```'$'\n\n'
+          FORMATTED_CHANGELOG+="## Quick Setup"$'\n\n'
+          FORMATTED_CHANGELOG+='```json'$'\n'
+          FORMATTED_CHANGELOG+='{'$'\n'
+          FORMATTED_CHANGELOG+='  "mcpServers": {'$'\n'
+          FORMATTED_CHANGELOG+='    "clockify": {'$'\n'
+          FORMATTED_CHANGELOG+='      "command": "npx",'$'\n'
+          FORMATTED_CHANGELOG+='      "args": ["@hongkongkiwi/clockify-master-mcp"],'$'\n'
+          FORMATTED_CHANGELOG+='      "env": {'$'\n'
+          FORMATTED_CHANGELOG+='        "CLOCKIFY_API_KEY": "your_api_key_here"'$'\n'
+          FORMATTED_CHANGELOG+='      }'$'\n'
+          FORMATTED_CHANGELOG+='    }'$'\n'
+          FORMATTED_CHANGELOG+='  }'$'\n'
+          FORMATTED_CHANGELOG+='}'$'\n'
+          FORMATTED_CHANGELOG+='```'
+          
+          # Save to output (handle multiline)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$FORMATTED_CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare-release, build-and-test, generate-changelog]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          
+      - name: Create/Update tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ needs.prepare-release.outputs.tag }} -m "Release ${{ needs.prepare-release.outputs.version }}"
+          git push origin ${{ needs.prepare-release.outputs.tag }}
+        
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.prepare-release.outputs.tag }}
+          release_name: "Clockify Master MCP v${{ needs.prepare-release.outputs.version }}"
+          body: ${{ needs.generate-changelog.outputs.changelog }}
+          prerelease: ${{ needs.prepare-release.outputs.is-prerelease }}
+          draft: false
+
+  trigger-publish:
+    name: Trigger Publishing
+    runs-on: ubuntu-latest
+    needs: [prepare-release, create-release]
+    
+    steps:
+      - name: Trigger NPM publish
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-npm.yml',
+              ref: 'main',
+              inputs: {
+                version: '${{ needs.prepare-release.outputs.version }}',
+                'dry-run': 'false'
+              }
+            });
+            
+      - name: Trigger JSR publish
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-jsr.yml',
+              ref: 'main',
+              inputs: {
+                'dry-run': 'false'
+              }
+            });
+
+  notify-success:
+    name: Notify Release Success
+    runs-on: ubuntu-latest
+    needs: [prepare-release, trigger-publish]
+    
+    steps:
+      - name: Release success notification
+        run: |
+          echo "🎉 Successfully created release v${{ needs.prepare-release.outputs.version }}"
+          echo "📦 Publishing to NPM and JSR registries initiated"
+          echo "🚀 Users can install with: npx @hongkongkiwi/clockify-master-mcp"
+          echo "📖 Release notes: https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare-release.outputs.tag }}"

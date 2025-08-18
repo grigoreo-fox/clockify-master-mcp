@@ -1,0 +1,248 @@
+name: Welcome Contributors
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    name: Welcome New Contributors
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Welcome new issue creator
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Check if this is the user's first issue
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: context.payload.issue.user.login,
+              state: 'all'
+            });
+            
+            if (issues.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `👋 **Welcome to Clockify Master MCP!**
+
+Thank you for opening your first issue! We appreciate your contribution to the project.
+
+**What happens next?**
+1. 🔍 Our team will review your issue within 48 hours
+2. 🏷️ We'll add appropriate labels to categorize it
+3. 💬 We may ask for additional information or clarification
+4. 🚀 If it's a bug, we'll work on a fix. If it's a feature request, we'll discuss implementation
+
+**Need help getting started?**
+- 📖 Check our [README](https://github.com/hongkongkiwi/mcp-clockify#readme) for setup instructions
+- 🐛 For bugs, please include steps to reproduce and your environment details
+- 💡 For feature requests, describe the use case and expected behavior
+
+**Community Guidelines:**
+- Be respectful and constructive
+- Search existing issues before creating new ones
+- Provide clear, detailed descriptions
+
+Thanks for helping make Clockify Master MCP better! 🎉`
+              });
+            }
+
+      - name: Welcome new PR creator
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Check if this is the user's first PR
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: context.payload.pull_request.user.login,
+              state: 'all'
+            });
+            
+            if (prs.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🎉 **Welcome and thank you for your first contribution!**
+
+We're excited to review your pull request! Here's what happens next:
+
+**Automated Checks:**
+- ✅ CI tests will run automatically
+- 🔍 CodeRabbit AI will review your code
+- 🔒 Security scans will check for vulnerabilities
+- 📊 Coverage reports will be generated
+
+**Review Process:**
+1. 🤖 Automated checks must pass
+2. 👥 A maintainer will review your code
+3. 💬 We may request changes or ask questions
+4. ✅ Once approved, we'll merge your contribution
+
+**Contribution Guidelines:**
+- Follow our coding standards (ESLint will check)
+- Include tests for new features
+- Update documentation if needed
+- Keep commits focused and well-described
+
+**Need Help?**
+Feel free to ask questions in the comments. We're here to help!
+
+**Tips for faster review:**
+- Ensure all CI checks pass
+- Write clear commit messages
+- Keep PRs focused on a single change
+- Add tests and documentation
+
+Thank you for contributing to Clockify Master MCP! 🚀
+
+---
+*This is an automated welcome message. A maintainer will review your PR soon.*`
+              });
+              
+              // Add helpful labels for first-time contributors
+              await github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['first-time-contributor']
+              });
+            }
+
+  assign-reviewers:
+    name: Auto-assign Reviewers
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    
+    steps:
+      - name: Assign reviewers based on changed files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const changedFiles = files.map(file => file.filename);
+            let labels = [];
+            let reviewers = [];
+            
+            // Auto-assign labels and reviewers based on changed files
+            if (changedFiles.some(file => file.startsWith('src/'))) {
+              labels.push('code-change');
+            }
+            
+            if (changedFiles.some(file => file.includes('test'))) {
+              labels.push('tests');
+            }
+            
+            if (changedFiles.some(file => file.endsWith('.md'))) {
+              labels.push('documentation');
+            }
+            
+            if (changedFiles.some(file => file.includes('.github/workflows'))) {
+              labels.push('ci/cd');
+            }
+            
+            if (changedFiles.some(file => file.includes('package.json'))) {
+              labels.push('dependencies');
+            }
+            
+            // Add size label based on changes
+            const totalChanges = files.reduce((sum, file) => sum + file.changes, 0);
+            if (totalChanges < 10) {
+              labels.push('size/XS');
+            } else if (totalChanges < 50) {
+              labels.push('size/S');
+            } else if (totalChanges < 200) {
+              labels.push('size/M');
+            } else if (totalChanges < 500) {
+              labels.push('size/L');
+            } else {
+              labels.push('size/XL');
+            }
+            
+            // Add labels
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              });
+            }
+            
+            console.log(`Added labels: ${labels.join(', ')}`);
+            console.log(`Changed files: ${changedFiles.join(', ')}`);
+
+  check-conventional-commits:
+    name: Check Conventional Commits
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    
+    steps:
+      - name: Check PR title and commits
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            const conventionalPattern = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)(\(.+\))?: .+/;
+            
+            let feedback = [];
+            
+            // Check PR title
+            if (!conventionalPattern.test(title)) {
+              feedback.push(`❌ **PR Title**: "${title}" doesn't follow conventional commits format`);
+              feedback.push(`✅ **Should be**: type(scope): description`);
+              feedback.push(`📖 **Examples**: \`feat: add new timer feature\`, \`fix: resolve authentication bug\`, \`docs: update README\``);
+            } else {
+              feedback.push(`✅ **PR Title**: Follows conventional commits format`);
+            }
+            
+            // Get commits
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const invalidCommits = commits.filter(commit => 
+              !conventionalPattern.test(commit.commit.message.split('\n')[0])
+            );
+            
+            if (invalidCommits.length > 0) {
+              feedback.push(`\n⚠️ **Some commits don't follow conventional format**:`);
+              invalidCommits.forEach(commit => {
+                const shortSha = commit.sha.substring(0, 7);
+                const message = commit.commit.message.split('\n')[0];
+                feedback.push(`- \`${shortSha}\`: ${message}`);
+              });
+              feedback.push(`\n💡 **Tip**: You can amend commit messages or use squash merge`);
+            } else {
+              feedback.push(`✅ **All commits**: Follow conventional commits format`);
+            }
+            
+            // Post feedback if there are issues
+            if (feedback.some(f => f.includes('❌') || f.includes('⚠️'))) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 📋 Conventional Commits Check\n\n${feedback.join('\n')}\n\n---\n*This check helps maintain a clean commit history and enables automated changelog generation.*`
+              });
+            }

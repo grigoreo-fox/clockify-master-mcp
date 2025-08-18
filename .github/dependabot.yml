@@ -1,0 +1,142 @@
+version: 2
+updates:
+  # NPM dependencies - Security updates (daily)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+    open-pull-requests-limit: 15
+    reviewers:
+      - "hongkongkiwi"
+    assignees:
+      - "hongkongkiwi"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "security"
+      - "auto-merge"
+    # Only security updates and patches for daily runs
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+
+  # NPM dependencies - Regular updates (weekly)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "hongkongkiwi"
+    assignees:
+      - "hongkongkiwi"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "auto-merge"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "@modelcontextprotocol/sdk"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group security updates for immediate attention
+      security:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+      # Group TypeScript related updates
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "@typescript-eslint/*"
+      # Group testing related updates
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "nock"
+      # Group linting and formatting
+      linting:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-*"
+          - "prettier"
+          - "husky"
+          - "lint-staged"
+      # Group MCP related updates
+      mcp:
+        patterns:
+          - "@modelcontextprotocol/*"
+      # Group build and dev tools
+      dev-tools:
+        patterns:
+          - "tsx"
+          - "vite*"
+          - "@vite*"
+
+  # GitHub Actions - Security updates (daily)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+    open-pull-requests-limit: 8
+    reviewers:
+      - "hongkongkiwi"
+    assignees:
+      - "hongkongkiwi"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "security"
+      - "auto-merge"
+
+  # GitHub Actions - Regular updates (weekly)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "08:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "hongkongkiwi"
+    assignees:
+      - "hongkongkiwi"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "auto-merge"
+    groups:
+      # Group GitHub Actions by vendor
+      actions-github:
+        patterns:
+          - "actions/*"
+      actions-setup:
+        patterns:
+          - "*/setup-*"
+      actions-security:
+        patterns:
+          - "github/codeql-action"
+          - "snyk/actions"
+          - "trufflesecurity/trufflehog"
