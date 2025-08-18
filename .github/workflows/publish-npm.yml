@@ -32,39 +32,44 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
           
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
+          
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         
       - name: Run tests
-        run: npm run test:coverage
+        run: pnpm run test:coverage
         env:
           CLOCKIFY_API_KEY: test-key-12345678
           
       - name: Build package
-        run: npm run build
+        run: pnpm run build
         
       - name: Update version if specified
         if: github.event.inputs.version != ''
-        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
+        run: pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
         
       - name: Verify package contents
         run: |
-          npm pack --dry-run
+          pnpm pack --dry-run
           echo "Package contents:"
-          tar -tzf $(npm pack --silent) | head -20
+          tar -tzf $(pnpm pack --silent) | head -20
           
       - name: Publish to NPM (dry run)
         if: github.event.inputs.dry-run == 'true'
-        run: npm publish --dry-run
+        run: pnpm publish --dry-run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           
       - name: Publish to NPM
         if: github.event.inputs.dry-run != 'true'
-        run: npm publish
+        run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           

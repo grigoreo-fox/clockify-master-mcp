@@ -42,10 +42,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
           
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         
       - name: Install actionlint
         run: |
@@ -81,19 +86,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
           
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         
       - name: Run type checking
-        run: npm run typecheck
+        run: pnpm run typecheck
         
       - name: Run linting
-        run: npm run lint
+        run: pnpm run lint
         
       - name: Run tests
-        run: npm run test:coverage
+        run: pnpm run test:coverage
         env:
           CLOCKIFY_API_KEY: test-key-12345678
           
@@ -127,13 +137,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
           
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         
       - name: Build package
-        run: npm run build
+        run: pnpm run build
         
       - name: Test CLI executable
         run: |
@@ -147,7 +162,7 @@ jobs:
       - name: Test package integrity
         run: |
           # Create and test package tarball
-          npm pack
+          pnpm pack
           tar -tzf *.tgz | head -20
           
           # Verify all required files are included
@@ -217,10 +232,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
           
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         
       - name: Run npm audit
         run: npm audit --audit-level moderate
