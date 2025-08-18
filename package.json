@@ -1,6 +1,6 @@
 {
   "name": "@hongkongkiwi/clockify-master-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Clockify Master MCP - The most comprehensive Model Context Protocol server for Clockify time tracking with full API integration, advanced filtering, and enterprise features",
   "displayName": "Clockify Master MCP",
   "main": "dist/index.js",
