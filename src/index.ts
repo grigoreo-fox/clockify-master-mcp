@@ -287,29 +287,10 @@ async function main() {
   await server.connect(transport);
   
   console.error("Clockify MCP server started successfully");
-  console.error(`Connected with API key: ${config.getApiKey().substring(0, 8)}...`);
   
   const restrictions = config.getRestrictions();
   if (restrictions.readOnly) {
     console.error("Running in READ-ONLY mode");
-  }
-  if (restrictions.allowedProjects) {
-    console.error(`Project restrictions: ${restrictions.allowedProjects.length} allowed projects`);
-  }
-  if (restrictions.allowedWorkspaces) {
-    console.error(`Workspace restrictions: ${restrictions.allowedWorkspaces.length} allowed workspaces`);
-  }
-  
-  const toolFiltering = config.getToolFiltering();
-  const totalAvailableTools = clockifyTools.getAvailableToolNames().length;
-  const exposedTools = tools.length;
-  console.error(`Tools: ${exposedTools}/${totalAvailableTools} exposed (categories: ${toolFiltering.enabledCategories.join(', ')})`);
-  
-  if (toolFiltering.enabledTools) {
-    console.error(`Specific tools enabled: ${toolFiltering.enabledTools.join(', ')}`);
-  }
-  if (toolFiltering.disabledTools) {
-    console.error(`Tools disabled: ${toolFiltering.disabledTools.join(', ')}`);
   }
 }
 
