@@ -69,7 +69,7 @@ export class ClockifyTools {
         category: 'user',
         priority: 3,
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe('The user ID'),
+          userId: schemas.objectIdSchema.describe('The user ID'),
         }),
         handler: async (
           input: z.infer<typeof schemas.workspaceIdSchema & typeof schemas.userIdSchema>
@@ -147,7 +147,7 @@ export class ClockifyTools {
         priority: 2,
         description: 'Get details of a specific project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe('The project ID'),
+          projectId: schemas.objectIdSchema.describe('The project ID'),
         }),
         handler: async (input: any) => {
           const project = await this.projectService.getProjectById(
@@ -186,7 +186,7 @@ export class ClockifyTools {
         priority: 5,
         description: 'Archive a project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe('The project ID to archive'),
+          projectId: schemas.objectIdSchema.describe('The project ID to archive'),
         }),
         handler: async (input: any) => {
           const project = await this.projectService.archiveProject(
@@ -233,7 +233,7 @@ export class ClockifyTools {
         priority: 2,
         description: 'Get details of a specific client',
         inputSchema: schemas.workspaceIdSchema.extend({
-          clientId: z.string().describe('The client ID'),
+          clientId: schemas.objectIdSchema.describe('The client ID'),
         }),
         handler: async (input: any) => {
           const client = await this.clientService.getClientById(input.workspaceId, input.clientId);
@@ -258,7 +258,7 @@ export class ClockifyTools {
         priority: 4,
         description: 'Update an existing client',
         inputSchema: schemas.workspaceIdSchema.extend({
-          clientId: z.string().describe('The client ID'),
+          clientId: schemas.objectIdSchema.describe('The client ID'),
           name: z.string().optional(),
           email: z.string().email().optional(),
           address: z.string().optional(),
@@ -303,7 +303,7 @@ export class ClockifyTools {
         priority: 4,
         description: 'Delete a time entry',
         inputSchema: schemas.workspaceIdSchema.extend({
-          timeEntryId: z.string().describe('The time entry ID to delete'),
+          timeEntryId: schemas.objectIdSchema.describe('The time entry ID to delete'),
         }),
         handler: async (input: any) => {
           await this.timeEntryService.deleteTimeEntry(input.workspaceId, input.timeEntryId);
@@ -338,7 +338,7 @@ export class ClockifyTools {
         priority: 5,
         description: 'Get the currently running timer for a user',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe('The user ID'),
+          userId: schemas.objectIdSchema.describe('The user ID'),
         }),
         handler: async (input: any) => {
           const entry = await this.timeEntryService.getRunningTimeEntry(
@@ -368,7 +368,7 @@ export class ClockifyTools {
         priority: 7,
         description: 'Get all time entries for today',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe('The user ID'),
+          userId: schemas.objectIdSchema.describe('The user ID'),
         }),
         handler: async (input: any) => {
           const entries = await this.timeEntryService.getTodayTimeEntries(
@@ -384,7 +384,7 @@ export class ClockifyTools {
         priority: 8,
         description: 'Get all time entries for the current week',
         inputSchema: schemas.workspaceIdSchema.extend({
-          userId: z.string().describe('The user ID'),
+          userId: schemas.objectIdSchema.describe('The user ID'),
         }),
         handler: async (input: any) => {
           const entries = await this.timeEntryService.getWeekTimeEntries(
@@ -483,7 +483,7 @@ export class ClockifyTools {
         priority: 1,
         description: 'List all tasks in a project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe('The project ID'),
+          projectId: schemas.objectIdSchema.describe('The project ID'),
           isActive: z.boolean().optional().describe('Filter by active status'),
         }),
         handler: async (input: any) => {
@@ -513,8 +513,8 @@ export class ClockifyTools {
         priority: 3,
         description: 'Update an existing task',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe('The project ID'),
-          taskId: z.string().describe('The task ID'),
+          projectId: schemas.objectIdSchema.describe('The project ID'),
+          taskId: schemas.objectIdSchema.describe('The task ID'),
           name: z.string().optional(),
           assigneeIds: z.array(z.string()).optional(),
           estimate: z.string().optional(),
@@ -533,8 +533,8 @@ export class ClockifyTools {
         priority: 4,
         description: 'Mark a task as done',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe('The project ID'),
-          taskId: z.string().describe('The task ID'),
+          projectId: schemas.objectIdSchema.describe('The project ID'),
+          taskId: schemas.objectIdSchema.describe('The task ID'),
         }),
         handler: async (input: any) => {
           const task = await this.taskService.markTaskAsDone(
@@ -597,7 +597,7 @@ export class ClockifyTools {
         priority: 3,
         description: 'Get progress report for a specific project',
         inputSchema: schemas.workspaceIdSchema.extend({
-          projectId: z.string().describe('The project ID'),
+          projectId: schemas.objectIdSchema.describe('The project ID'),
           start: z.string().describe('Start date in ISO format'),
           end: z.string().describe('End date in ISO format'),
         }),
