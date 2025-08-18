@@ -58,9 +58,22 @@ export class TimeEntryService {
       taskId?: string;
       end?: string;
       tagIds?: string[];
+      hourlyRate?: {
+        amount: number;
+        currency: string;
+      };
+      costRate?: {
+        amount: number;
+        currency: string;
+      };
+      type?: 'REGULAR' | 'BREAK' | 'CLOCK_IN_OUT';
+      kioskId?: string;
       customFields?: Array<{
         customFieldId: string;
-        value: string | number;
+        value: string | number | boolean;
+        sourceType?: string;
+        name?: string;
+        type?: string;
       }>;
     }
   ): Promise<ClockifyTimeEntry> {

@@ -248,7 +248,7 @@ describe('ClockifyTools Integration', () => {
         action: 'UPDATE',
         updates: {
           billable: true,
-          projectId: 'project-123',
+          projectId: 'project-999', // Use a different project ID that won't be configured
         },
       });
 

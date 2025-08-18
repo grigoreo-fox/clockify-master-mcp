@@ -6,6 +6,7 @@ dotenv.config();
 export const ConfigSchema = z.object({
   apiKey: z.string().min(1, 'API key is required'),
   apiUrl: z.string().url().default('https://api.clockify.me/api/v1'),
+  region: z.enum(['global', 'eu', 'us']).default('global').describe('Clockify API region'),
   restrictions: z
     .object({
       // Project restrictions
@@ -130,6 +131,7 @@ export class ConfigurationManager {
     const envConfig = {
       apiKey: process.env.CLOCKIFY_API_KEY || '',
       apiUrl: process.env.CLOCKIFY_API_URL,
+      region: process.env.CLOCKIFY_REGION as 'global' | 'eu' | 'us',
       restrictions: this.parseRestrictions(),
       toolFiltering: this.parseToolFiltering(),
       cacheEnabled: process.env.CACHE_ENABLED === 'true',
@@ -250,7 +252,19 @@ export class ConfigurationManager {
   }
 
   getApiUrl(): string {
-    return this.config.apiUrl;
+    // If apiUrl is explicitly set, use it
+    if (this.config.apiUrl !== 'https://api.clockify.me/api/v1') {
+      return this.config.apiUrl;
+    }
+
+    // Otherwise, use region-specific URL
+    const regionUrls = {
+      global: 'https://api.clockify.me/api/v1',
+      eu: 'https://euc1-api.clockify.me/api/v1',
+      us: 'https://use2-api.clockify.me/api/v1',
+    };
+
+    return regionUrls[this.config.region] || regionUrls.global;
   }
 
   getRestrictions(): Config['restrictions'] {

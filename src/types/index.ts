@@ -152,10 +152,39 @@ export interface ClockifyTimeEntry {
   customFieldValues?: Array<{
     customFieldId: string;
     timeEntryId?: string;
-    value: string | number;
+    value: string | number | boolean;
+    name?: string;
+    type?: string;
   }>;
   type?: string;
   kioskId?: string;
+  hourlyRate?: {
+    amount: number;
+    currency: string;
+  };
+  costRate?: {
+    amount: number;
+    currency: string;
+  };
+  project?: {
+    id: string;
+    name: string;
+    color?: string;
+  };
+  task?: {
+    id: string;
+    name: string;
+  };
+  user?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+  tags?: Array<{
+    id: string;
+    name: string;
+    workspaceId: string;
+  }>;
 }
 
 export interface ClockifyTimeEntryRequest {
@@ -166,10 +195,44 @@ export interface ClockifyTimeEntryRequest {
   taskId?: string;
   end?: string;
   tagIds?: string[];
+  hourlyRate?: {
+    amount: number;
+    currency: string;
+  };
+  costRate?: {
+    amount: number;
+    currency: string;
+  };
+  type?: 'REGULAR' | 'BREAK' | 'CLOCK_IN_OUT';
+  kioskId?: string;
   customFields?: Array<{
     customFieldId: string;
-    value: string | number;
+    value: string | number | boolean;
+    sourceType?: string;
+    name?: string;
+    type?: string;
   }>;
+}
+
+export interface ClockifyCustomField {
+  id: string;
+  name: string;
+  workspaceId: string;
+  type: 'TEXT' | 'NUMBER' | 'DROPDOWN_SINGLE' | 'DROPDOWN_MULTIPLE' | 'CHECKBOX' | 'LINK';
+  required: boolean;
+  placeholder?: string;
+  allowedValues?: string[];
+  onlyAdminCanEdit: boolean;
+  status: 'VISIBLE' | 'INVISIBLE';
+}
+
+export interface ClockifyCustomFieldRequest {
+  name: string;
+  type: 'TEXT' | 'NUMBER' | 'DROPDOWN_SINGLE' | 'DROPDOWN_MULTIPLE' | 'CHECKBOX' | 'LINK';
+  required?: boolean;
+  placeholder?: string;
+  allowedValues?: string[];
+  onlyAdminCanEdit?: boolean;
 }
 
 export interface ClockifyReportRequest {

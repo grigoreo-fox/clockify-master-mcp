@@ -45,25 +45,88 @@ export const paginationSchema = z.object({
 
 export const createTimeEntrySchema = z.object({
   workspaceId: objectIdSchema.describe('The workspace ID'),
-  description: z.string().describe('Description of the time entry'),
+  description: z
+    .string()
+    .transform(desc => desc.replace(/<[^>]*>/g, '').trim())
+    .describe('Description of the time entry'),
   start: z.string().describe('Start time in ISO 8601 format'),
   end: z.string().optional().describe('End time in ISO 8601 format (omit for running timer)'),
   projectId: objectIdSchema.optional().describe('Project ID to associate with'),
   taskId: objectIdSchema.optional().describe('Task ID to associate with'),
   tagIds: z.array(objectIdSchema).optional().describe('Array of tag IDs'),
   billable: z.boolean().optional().default(false).describe('Whether the time entry is billable'),
+  hourlyRate: z
+    .object({
+      amount: z.number().describe('Hourly rate amount'),
+      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+    })
+    .optional()
+    .describe('Hourly rate for this entry'),
+  costRate: z
+    .object({
+      amount: z.number().describe('Cost rate amount'),
+      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+    })
+    .optional()
+    .describe('Cost rate for this entry'),
+  type: z.enum(['REGULAR', 'BREAK', 'CLOCK_IN_OUT']).optional().describe('Type of time entry'),
+  kioskId: z.string().optional().describe('Kiosk ID for kiosk entries'),
+  customFields: z
+    .array(
+      z.object({
+        customFieldId: objectIdSchema.describe('Custom field ID'),
+        value: z.union([z.string(), z.number(), z.boolean()]).describe('Custom field value'),
+        sourceType: z.string().optional().describe('Source type of the custom field'),
+        name: z.string().optional().describe('Name of the custom field'),
+        type: z.string().optional().describe('Type of the custom field'),
+      })
+    )
+    .optional()
+    .describe('Custom field values'),
 });
 
 export const updateTimeEntrySchema = z.object({
   workspaceId: objectIdSchema.describe('The workspace ID'),
   timeEntryId: objectIdSchema.describe('The time entry ID to update'),
-  description: z.string().optional().describe('New description'),
+  description: z
+    .string()
+    .optional()
+    .transform(desc => (desc ? desc.replace(/<[^>]*>/g, '').trim() : desc))
+    .describe('New description'),
   start: z.string().optional().describe('New start time in ISO 8601 format'),
   end: z.string().optional().describe('New end time in ISO 8601 format'),
   projectId: objectIdSchema.optional().describe('New project ID'),
   taskId: objectIdSchema.optional().describe('New task ID'),
   tagIds: z.array(objectIdSchema).optional().describe('New array of tag IDs'),
   billable: z.boolean().optional().describe('New billable status'),
+  hourlyRate: z
+    .object({
+      amount: z.number().describe('Hourly rate amount'),
+      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+    })
+    .optional()
+    .describe('New hourly rate for this entry'),
+  costRate: z
+    .object({
+      amount: z.number().describe('Cost rate amount'),
+      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+    })
+    .optional()
+    .describe('New cost rate for this entry'),
+  type: z.enum(['REGULAR', 'BREAK', 'CLOCK_IN_OUT']).optional().describe('New type of time entry'),
+  kioskId: z.string().optional().describe('New kiosk ID for kiosk entries'),
+  customFields: z
+    .array(
+      z.object({
+        customFieldId: objectIdSchema.describe('Custom field ID'),
+        value: z.union([z.string(), z.number(), z.boolean()]).describe('Custom field value'),
+        sourceType: z.string().optional().describe('Source type of the custom field'),
+        name: z.string().optional().describe('Name of the custom field'),
+        type: z.string().optional().describe('Type of the custom field'),
+      })
+    )
+    .optional()
+    .describe('Custom field values'),
 });
 
 export const createProjectSchema = z.object({
@@ -74,6 +137,33 @@ export const createProjectSchema = z.object({
   billable: z.boolean().optional().default(true).describe('Whether the project is billable'),
   isPublic: z.boolean().optional().default(true).describe('Whether the project is public'),
   note: z.string().optional().describe('Project notes/description'),
+  template: z.boolean().optional().default(false).describe('Whether the project is a template'),
+  archived: z.boolean().optional().default(false).describe('Whether the project is archived'),
+  duration: z.string().optional().describe('Project duration estimate'),
+  timeEstimate: z
+    .object({
+      estimate: z.string().describe('Time estimate'),
+      type: z.string().describe('Estimate type'),
+      resetOption: z.string().optional().describe('Reset option'),
+      active: z.boolean().optional().describe('Whether estimate is active'),
+    })
+    .optional()
+    .describe('Time estimate settings'),
+  budgetEstimate: z
+    .object({
+      estimate: z.number().describe('Budget estimate amount'),
+      type: z.string().describe('Budget estimate type'),
+      resetOption: z.string().optional().describe('Reset option'),
+    })
+    .optional()
+    .describe('Budget estimate settings'),
+  costRate: z
+    .object({
+      amount: z.number().describe('Cost rate amount'),
+      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+    })
+    .optional()
+    .describe('Default cost rate for the project'),
 });
 
 export const updateProjectSchema = z.object({
@@ -129,6 +219,18 @@ export const reportRequestSchema = z.object({
     .describe('Group results by these dimensions'),
 });
 
+export const startTimerSchema = z.object({
+  workspaceId: objectIdSchema.describe('The workspace ID'),
+  description: z
+    .string()
+    .transform(desc => desc.replace(/<[^>]*>/g, '').trim())
+    .describe('Description of the time entry'),
+  projectId: objectIdSchema.optional().describe('Project ID to associate with'),
+  taskId: objectIdSchema.optional().describe('Task ID to associate with'),
+  tagIds: z.array(objectIdSchema).optional().describe('Array of tag IDs'),
+  billable: z.boolean().optional().default(false).describe('Whether the time entry is billable'),
+});
+
 export const stopTimerSchema = z.object({
   workspaceId: objectIdSchema.describe('The workspace ID'),
   userId: objectIdSchema.optional().describe('The user ID (defaults to current user)'),
@@ -151,6 +253,32 @@ export const searchUsersSchema = z.object({
     .enum(['ACTIVE', 'INACTIVE', 'PENDING_EMAIL_VERIFICATION'])
     .optional()
     .describe('Filter by status'),
+});
+
+export const createCustomFieldSchema = z.object({
+  workspaceId: objectIdSchema.describe('The workspace ID'),
+  name: z.string().describe('Custom field name'),
+  type: z
+    .enum(['TEXT', 'NUMBER', 'DROPDOWN_SINGLE', 'DROPDOWN_MULTIPLE', 'CHECKBOX', 'LINK'])
+    .describe('Custom field type'),
+  required: z.boolean().optional().default(false).describe('Whether the field is required'),
+  placeholder: z.string().optional().describe('Placeholder text'),
+  allowedValues: z.array(z.string()).optional().describe('Allowed values for dropdown fields'),
+  onlyAdminCanEdit: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether only admins can edit this field'),
+});
+
+export const updateCustomFieldSchema = z.object({
+  workspaceId: objectIdSchema.describe('The workspace ID'),
+  customFieldId: objectIdSchema.describe('The custom field ID to update'),
+  name: z.string().optional().describe('New custom field name'),
+  required: z.boolean().optional().describe('New required status'),
+  placeholder: z.string().optional().describe('New placeholder text'),
+  allowedValues: z.array(z.string()).optional().describe('New allowed values'),
+  onlyAdminCanEdit: z.boolean().optional().describe('New admin edit restriction'),
 });
 
 export const bulkTimeEntriesSchema = z.object({
