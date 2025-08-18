@@ -12,6 +12,7 @@ import {
   ErrorCode,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { ClockifyTools } from './tools/index.js';
 import { ConfigurationManager } from './config/index.js';
 import { RestrictionMiddleware } from './middleware/restrictions.js';
@@ -44,11 +45,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: tools.map(tool => ({
       name: tool.name,
       description: tool.description,
-      inputSchema: {
-        type: 'object',
-        properties: {},
-        required: [],
-      },
+      inputSchema: zodToJsonSchema(tool.inputSchema),
     })),
   };
 });
