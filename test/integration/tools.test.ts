@@ -513,7 +513,7 @@ describe('ClockifyTools Integration', () => {
       const toolList = tools.getTools();
       const createTimeEntryTool = toolList.find(t => t.name === 'create_time_entry')!;
 
-      await executeToolWithMoneyNormalization(
+      const result = await executeToolWithMoneyNormalization(
         createTimeEntryTool,
         {
           workspaceId: 'workspace-123',
@@ -525,8 +525,8 @@ describe('ClockifyTools Integration', () => {
         true
       );
 
+      expect(result.success).toBe(true);
       expect(capturedBody?.hourlyRate).toEqual({ amount: 2500, currency: 'USD' });
-    });
 
     it('should leave write requests unchanged when disabled', async () => {
       let capturedBody: Record<string, unknown> | undefined;
