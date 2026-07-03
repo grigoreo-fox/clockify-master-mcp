@@ -11,8 +11,10 @@ const MONEY_SCALAR_KEYS = new Set([
   'earnedAmount',
   'costAmount',
   'totalAmount',
-  'value',
 ]);
+
+/** Report amount item types where `value` is a monetary scalar in minor units. */
+const MONEY_AMOUNT_ITEM_TYPES = new Set(['EARNED', 'COST', 'PROFIT']);
 
 /** Keys whose numeric values are never currency amounts. */
 const SKIP_DESCENDANT_KEYS = new Set([
@@ -99,6 +101,16 @@ function transformValue(value: unknown, direction: 'normalize' | 'denormalize'):
       }
 
       if (MONEY_SCALAR_KEYS.has(childKey) && typeof childValue === 'number') {
+        result[childKey] = transformMoneyScalar(childValue, direction);
+        continue;
+      }
+
+      if (
+        childKey === 'value' &&
+        typeof childValue === 'number' &&
+        typeof record.type === 'string' &&
+        MONEY_AMOUNT_ITEM_TYPES.has(record.type)
+      ) {
         result[childKey] = transformMoneyScalar(childValue, direction);
         continue;
       }

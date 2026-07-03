@@ -527,6 +527,7 @@ describe('ClockifyTools Integration', () => {
 
       expect(result.success).toBe(true);
       expect(capturedBody?.hourlyRate).toEqual({ amount: 2500, currency: 'USD' });
+    });
 
     it('should leave write requests unchanged when disabled', async () => {
       let capturedBody: Record<string, unknown> | undefined;

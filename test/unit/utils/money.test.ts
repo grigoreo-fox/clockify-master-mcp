@@ -83,6 +83,44 @@ describe('money utils', () => {
     ]);
   });
 
+  it('does not normalize numeric custom field values', () => {
+    expect(
+      normalizeMoneyFromApi({
+        customFields: [{ customFieldId: 'cf1', type: 'NUMBER', value: 42 }],
+        customFieldValues: [{ customFieldId: 'cf2', type: 'NUMBER', value: 2000 }],
+      })
+    ).toEqual({
+      customFields: [{ customFieldId: 'cf1', type: 'NUMBER', value: 42 }],
+      customFieldValues: [{ customFieldId: 'cf2', type: 'NUMBER', value: 2000 }],
+    });
+  });
+
+  it('normalizes report amounts[].value when type is EARNED', () => {
+    expect(
+      normalizeMoneyFromApi({
+        totals: [
+          {
+            amounts: [
+              { type: 'EARNED', value: 623958.33 },
+              { type: 'COST', value: 200000 },
+              { type: 'PROFIT', value: 423958.33 },
+            ],
+          },
+        ],
+      })
+    ).toEqual({
+      totals: [
+        {
+          amounts: [
+            { type: 'EARNED', value: 6239.58 },
+            { type: 'COST', value: 2000 },
+            { type: 'PROFIT', value: 4239.58 },
+          ],
+        },
+      ],
+    });
+  });
+
   it('normalizes detailed report fixture amounts', () => {
     const normalized = normalizeMoneyFromApi(reportFixture);
 
