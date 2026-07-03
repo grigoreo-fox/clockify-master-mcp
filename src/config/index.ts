@@ -132,6 +132,27 @@ export const ConfigSchema = z.object({
 
 export type Config = z.infer<typeof ConfigSchema>;
 
+function parseEnvBoolean(
+  value: string | undefined,
+  envVarName: string
+): boolean | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+
+  const normalized = value.toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+  if (normalized === 'false') {
+    return false;
+  }
+
+  throw new Error(
+    `Configuration validation failed: ${envVarName} must be "true" or "false" (case-insensitive), got "${value}"`
+  );
+}
+
 export class ConfigurationManager {
   private config: Config;
 
@@ -146,7 +167,7 @@ export class ConfigurationManager {
       cacheTTLSeconds: process.env.CACHE_TTL ? parseInt(process.env.CACHE_TTL) : undefined,
       rateLimitPerMinute: process.env.RATE_LIMIT ? parseInt(process.env.RATE_LIMIT) : undefined,
       logLevel: process.env.LOG_LEVEL as any,
-      normalizeMoney: process.env.NORMALIZE_MONEY !== 'false',
+      normalizeMoney: parseEnvBoolean(process.env.NORMALIZE_MONEY, 'NORMALIZE_MONEY'),
     };
 
     // Remove undefined values

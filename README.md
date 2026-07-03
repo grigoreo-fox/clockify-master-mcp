@@ -588,7 +588,7 @@ Set `NORMALIZE_MONEY=false` to pass through raw API values unchanged (useful if 
 
 ### **Money Normalization**
 
-- **`NORMALIZE_MONEY`** - Convert money fields between API minor units and major currency units (default: `true`; set to `false` to disable)
+- **`NORMALIZE_MONEY`** - Convert money fields between API minor units and major currency units (default: `true`; set to `false` to disable). Accepts `true` or `false` only (case-insensitive).
 
 ### **Complete Example**
 

@@ -237,5 +237,46 @@ describe('ConfigurationManager', () => {
       const config = new ConfigurationManager();
       expect(config.isMoneyNormalizationEnabled()).toBe(true);
     });
+
+    it('should enable normalization when NORMALIZE_MONEY=TRUE (case-insensitive)', () => {
+      process.env.CLOCKIFY_API_KEY = 'test-key';
+      process.env.NORMALIZE_MONEY = 'TRUE';
+
+      const config = new ConfigurationManager();
+      expect(config.isMoneyNormalizationEnabled()).toBe(true);
+    });
+
+    it('should disable normalization when NORMALIZE_MONEY=FALSE (case-insensitive)', () => {
+      process.env.CLOCKIFY_API_KEY = 'test-key';
+      process.env.NORMALIZE_MONEY = 'FALSE';
+
+      const config = new ConfigurationManager();
+      expect(config.isMoneyNormalizationEnabled()).toBe(false);
+    });
+
+    it('should use schema default when NORMALIZE_MONEY is unset', () => {
+      process.env.CLOCKIFY_API_KEY = 'test-key';
+      delete process.env.NORMALIZE_MONEY;
+
+      const config = new ConfigurationManager();
+      expect(config.isMoneyNormalizationEnabled()).toBe(true);
+    });
+
+    it('should use schema default when NORMALIZE_MONEY is empty', () => {
+      process.env.CLOCKIFY_API_KEY = 'test-key';
+      process.env.NORMALIZE_MONEY = '';
+
+      const config = new ConfigurationManager();
+      expect(config.isMoneyNormalizationEnabled()).toBe(true);
+    });
+
+    it('should reject invalid NORMALIZE_MONEY values', () => {
+      process.env.CLOCKIFY_API_KEY = 'test-key';
+      process.env.NORMALIZE_MONEY = '0';
+
+      expect(() => new ConfigurationManager()).toThrow(
+        'NORMALIZE_MONEY must be "true" or "false" (case-insensitive)'
+      );
+    });
   });
 });
