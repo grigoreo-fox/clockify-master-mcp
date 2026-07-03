@@ -525,6 +525,20 @@ Example fix:
 
 ---
 
+## 💰 Money Amounts
+
+Clockify's API stores monetary values in **minor units** (cents, kopecks, etc.). For example, 2,500 RUB is sent as `250000`.
+
+By default, this MCP server **normalizes** money fields to **major currency units** so tools and resources return human-readable amounts (`2500` RUB instead of `250000`). Write tools (`create_time_entry`, `update_time_entry`, `create_project`, `update_project`, `add_user_to_project`) expect major units in the same way.
+
+Set `NORMALIZE_MONEY=false` to pass through raw API values unchanged (useful if you integrate directly with Clockify's wire format).
+
+**Affected fields:** `amount`, `rate`, `earnedRate`, `costRate`, `earnedAmount`, `costAmount`, `totalAmount`, `value`, and `{ amount, currency }` pairs such as `hourlyRate` and `costRate`.
+
+**Not transformed:** durations (`duration`, `totalTime`), pagination, counts, IDs, and `budgetEstimate.estimate` (time budget, not currency).
+
+---
+
 ## 📋 Environment Variables Reference
 
 ### **Required**
@@ -572,6 +586,10 @@ Example fix:
 - **`RATE_LIMIT`** - Requests per minute limit
 - **`LOG_LEVEL`** - Logging level (`debug`, `info`, `warn`, `error`)
 
+### **Money Normalization**
+
+- **`NORMALIZE_MONEY`** - Convert money fields between API minor units and major currency units (default: `true`; set to `false` to disable)
+
 ### **Complete Example**
 
 ```json
@@ -585,6 +603,7 @@ Example fix:
     "MAX_TOOLS": "20",
     "ALLOW_PAST_TIME_ENTRIES_IN_DAYS": "90",
     "CACHE_ENABLED": "true",
+    "NORMALIZE_MONEY": "true",
     "LOG_LEVEL": "info"
   }
 }

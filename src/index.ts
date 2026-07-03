@@ -16,6 +16,11 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { ClockifyTools } from './tools/index.js';
 import { ConfigurationManager } from './config/index.js';
 import { RestrictionMiddleware } from './middleware/restrictions.js';
+import {
+  denormalizeMoneyForApi,
+  MONEY_WRITE_TOOLS,
+  normalizeToolResult,
+} from './utils/money.js';
 
 // Initialize configuration
 const config = new ConfigurationManager();
@@ -39,13 +44,18 @@ const server = new Server(
 const clockifyTools = new ClockifyTools(config.getApiKey(), config);
 const tools = clockifyTools.getTools();
 
+function toolInputSchemaToJson(schema: unknown): Record<string, unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return zodToJsonSchema(schema as any) as Record<string, unknown>;
+}
+
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools.map(tool => ({
       name: tool.name,
       description: tool.description,
-      inputSchema: zodToJsonSchema(tool.inputSchema),
+      inputSchema: toolInputSchemaToJson(tool.inputSchema),
     })),
   };
 });
@@ -62,10 +72,18 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
     const args = request.params.arguments || {};
 
     // Apply middleware restrictions and defaults
-    const processedArgs = restrictionMiddleware.applyDefaults(args);
+    let processedArgs = restrictionMiddleware.applyDefaults(args);
     restrictionMiddleware.validateToolAccess(request.params.name, processedArgs);
 
-    const result = await tool.handler(processedArgs);
+    if (config.isMoneyNormalizationEnabled() && MONEY_WRITE_TOOLS.has(request.params.name)) {
+      processedArgs = denormalizeMoneyForApi(processedArgs);
+    }
+
+    let result = await tool.handler(processedArgs);
+
+    if (config.isMoneyNormalizationEnabled()) {
+      result = normalizeToolResult(result);
+    }
 
     return {
       content: [
@@ -130,7 +148,10 @@ server.setRequestHandler(ReadResourceRequestSchema, async request => {
     if (uri === 'clockify://workspaces') {
       const tool = tools.find(t => t.name === 'list_workspaces');
       if (tool) {
-        const result = await tool.handler({});
+        let result = await tool.handler({});
+        if (config.isMoneyNormalizationEnabled()) {
+          result = normalizeToolResult(result);
+        }
         return {
           contents: [
             {
@@ -144,7 +165,10 @@ server.setRequestHandler(ReadResourceRequestSchema, async request => {
     } else if (uri === 'clockify://current-user') {
       const tool = tools.find(t => t.name === 'get_current_user');
       if (tool) {
-        const result = await tool.handler({});
+        let result = await tool.handler({});
+        if (config.isMoneyNormalizationEnabled()) {
+          result = normalizeToolResult(result);
+        }
         return {
           contents: [
             {
@@ -267,6 +291,9 @@ async function main() {
   const restrictions = config.getRestrictions();
   if (restrictions.readOnly) {
     console.error('Running in READ-ONLY mode');
+  }
+  if (config.isMoneyNormalizationEnabled()) {
+    console.error('Money normalization enabled (amounts in major currency units)');
   }
 }
 

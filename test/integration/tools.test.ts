@@ -3,6 +3,7 @@ import { ClockifyTools } from '../../src/tools/index.js';
 import { ConfigurationManager } from '../../src/config/index.js';
 import { mockClockifyApi } from '../helpers/nockHelpers.js';
 import { mockApiResponses } from '../helpers/mockData.js';
+import { executeToolWithMoneyNormalization } from '../../src/utils/money.js';
 
 describe('ClockifyTools Integration', () => {
   let tools: ClockifyTools;
@@ -448,6 +449,112 @@ describe('ClockifyTools Integration', () => {
 
       expect(result.success).toBe(true);
       // The API call should have been made with default workspace ID
+    });
+  });
+
+  describe('Money normalization', () => {
+    it('should normalize read responses when enabled', async () => {
+      mockApi.scope
+        .get('/api/v1/workspaces/workspace-123/projects')
+        .matchHeader('X-Api-Key', /.+/)
+        .query(true)
+        .reply(200, [
+          {
+            ...mockApiResponses.projects[0],
+            hourlyRate: { amount: 7500, currency: 'USD' },
+          },
+        ]);
+
+      const toolList = tools.getTools();
+      const listProjectsTool = toolList.find(t => t.name === 'list_projects')!;
+
+      const result = await executeToolWithMoneyNormalization(listProjectsTool, {
+        workspaceId: 'workspace-123',
+      }, true);
+
+      expect(result.success).toBe(true);
+      expect(result.data[0].hourlyRate).toEqual({ amount: 75, currency: 'USD' });
+    });
+
+    it('should leave read responses unchanged when disabled', async () => {
+      mockApi.scope
+        .get('/api/v1/workspaces/workspace-123/projects')
+        .matchHeader('X-Api-Key', /.+/)
+        .query(true)
+        .reply(200, [
+          {
+            ...mockApiResponses.projects[0],
+            hourlyRate: { amount: 7500, currency: 'USD' },
+          },
+        ]);
+
+      const toolList = tools.getTools();
+      const listProjectsTool = toolList.find(t => t.name === 'list_projects')!;
+
+      const result = await executeToolWithMoneyNormalization(listProjectsTool, {
+        workspaceId: 'workspace-123',
+      }, false);
+
+      expect(result.success).toBe(true);
+      expect(result.data[0].hourlyRate).toEqual({ amount: 7500, currency: 'USD' });
+    });
+
+    it('should denormalize write requests when enabled', async () => {
+      let capturedBody: Record<string, unknown> | undefined;
+
+      mockApi.scope
+        .post('/api/v1/workspaces/workspace-123/time-entries')
+        .matchHeader('X-Api-Key', /.+/)
+        .reply(201, function (_uri, body) {
+          capturedBody = body as Record<string, unknown>;
+          return mockApiResponses.timeEntries[0];
+        });
+
+      const toolList = tools.getTools();
+      const createTimeEntryTool = toolList.find(t => t.name === 'create_time_entry')!;
+
+      await executeToolWithMoneyNormalization(
+        createTimeEntryTool,
+        {
+          workspaceId: 'workspace-123',
+          description: 'Billable work',
+          start: '2025-01-18T09:00:00Z',
+          end: '2025-01-18T10:00:00Z',
+          hourlyRate: { amount: 25, currency: 'USD' },
+        },
+        true
+      );
+
+      expect(capturedBody?.hourlyRate).toEqual({ amount: 2500, currency: 'USD' });
+    });
+
+    it('should leave write requests unchanged when disabled', async () => {
+      let capturedBody: Record<string, unknown> | undefined;
+
+      mockApi.scope
+        .post('/api/v1/workspaces/workspace-123/time-entries')
+        .matchHeader('X-Api-Key', /.+/)
+        .reply(201, function (_uri, body) {
+          capturedBody = body as Record<string, unknown>;
+          return mockApiResponses.timeEntries[0];
+        });
+
+      const toolList = tools.getTools();
+      const createTimeEntryTool = toolList.find(t => t.name === 'create_time_entry')!;
+
+      await executeToolWithMoneyNormalization(
+        createTimeEntryTool,
+        {
+          workspaceId: 'workspace-123',
+          description: 'Billable work',
+          start: '2025-01-18T09:00:00Z',
+          end: '2025-01-18T10:00:00Z',
+          hourlyRate: { amount: 25, currency: 'USD' },
+        },
+        false
+      );
+
+      expect(capturedBody?.hourlyRate).toEqual({ amount: 25, currency: 'USD' });
     });
   });
 });

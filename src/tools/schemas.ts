@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+const moneyAmountDescription =
+  'Amount in major currency units when NORMALIZE_MONEY=true (e.g. 2500 RUB, not 250000)';
+
+const moneyRateAmountSchema = z
+  .number()
+  .describe(moneyAmountDescription);
+
 // MongoDB ObjectId validation - 24 character hex string
 export const objectIdSchema = z
   .string()
@@ -57,18 +64,18 @@ export const createTimeEntrySchema = z.object({
   billable: z.boolean().optional().default(false).describe('Whether the time entry is billable'),
   hourlyRate: z
     .object({
-      amount: z.number().describe('Hourly rate amount'),
-      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+      amount: moneyRateAmountSchema,
+      currency: z.string().describe('Currency code (e.g., USD, EUR, RUB)'),
     })
     .optional()
-    .describe('Hourly rate for this entry'),
+    .describe('Billable hourly rate for this entry (client revenue)'),
   costRate: z
     .object({
-      amount: z.number().describe('Cost rate amount'),
-      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+      amount: moneyRateAmountSchema,
+      currency: z.string().describe('Currency code (e.g., USD, EUR, RUB)'),
     })
     .optional()
-    .describe('Cost rate for this entry'),
+    .describe('Cost hourly rate for this entry (employee pay)'),
   type: z.enum(['REGULAR', 'BREAK', 'CLOCK_IN_OUT']).optional().describe('Type of time entry'),
   kioskId: z.string().optional().describe('Kiosk ID for kiosk entries'),
   customFields: z
@@ -101,18 +108,18 @@ export const updateTimeEntrySchema = z.object({
   billable: z.boolean().optional().describe('New billable status'),
   hourlyRate: z
     .object({
-      amount: z.number().describe('Hourly rate amount'),
-      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+      amount: moneyRateAmountSchema,
+      currency: z.string().describe('Currency code (e.g., USD, EUR, RUB)'),
     })
     .optional()
-    .describe('New hourly rate for this entry'),
+    .describe('New billable hourly rate for this entry'),
   costRate: z
     .object({
-      amount: z.number().describe('Cost rate amount'),
-      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+      amount: moneyRateAmountSchema,
+      currency: z.string().describe('Currency code (e.g., USD, EUR, RUB)'),
     })
     .optional()
-    .describe('New cost rate for this entry'),
+    .describe('New cost hourly rate for this entry'),
   type: z.enum(['REGULAR', 'BREAK', 'CLOCK_IN_OUT']).optional().describe('New type of time entry'),
   kioskId: z.string().optional().describe('New kiosk ID for kiosk entries'),
   customFields: z
@@ -159,11 +166,11 @@ export const createProjectSchema = z.object({
     .describe('Budget estimate settings'),
   costRate: z
     .object({
-      amount: z.number().describe('Cost rate amount'),
-      currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+      amount: moneyRateAmountSchema,
+      currency: z.string().describe('Currency code (e.g., USD, EUR, RUB)'),
     })
     .optional()
-    .describe('Default cost rate for the project'),
+    .describe('Default cost rate for the project (employee pay)'),
 });
 
 export const updateProjectSchema = z.object({

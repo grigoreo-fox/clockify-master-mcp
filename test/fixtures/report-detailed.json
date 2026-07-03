@@ -1,0 +1,33 @@
+{
+  "totals": [
+    {
+      "totalTime": 8985,
+      "totalBillableTime": 8985,
+      "entriesCount": 3,
+      "amounts": [
+        {
+          "type": "EARNED",
+          "value": 623958.3333333334,
+          "amountByCurrency": [{ "currency": "RUB", "amount": 623958.0 }]
+        }
+      ],
+      "totalAmount": 623958.3333333334,
+      "totalAmountByCurrency": [{ "currency": "RUB", "amount": 623958.3333333334 }]
+    }
+  ],
+  "timeentries": [
+    {
+      "description": "Support",
+      "timeInterval": { "duration": 844 },
+      "billable": true,
+      "currency": "RUB",
+      "rate": 250000.0,
+      "earnedRate": 250000.0,
+      "earnedAmount": 58611.11111111112,
+      "amount": 58611.0,
+      "costRate": 200000.0,
+      "costAmount": 46888.88888888889,
+      "projectName": "Example"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ describe('ConfigurationManager', () => {
     delete process.env.CLOCKIFY_API_KEY;
     delete process.env.ALLOWED_PROJECTS;
     delete process.env.READ_ONLY;
+    delete process.env.NORMALIZE_MONEY;
   });
 
   describe('constructor', () => {
@@ -212,6 +213,29 @@ describe('ConfigurationManager', () => {
 
       expect(config.getDefaultProjectId()).toBe('default-project');
       expect(config.getDefaultWorkspaceId()).toBe('default-workspace');
+    });
+  });
+
+  describe('money normalization', () => {
+    it('should enable normalization by default', () => {
+      const config = new ConfigurationManager({ apiKey: 'test-key' });
+      expect(config.isMoneyNormalizationEnabled()).toBe(true);
+    });
+
+    it('should disable normalization when NORMALIZE_MONEY=false', () => {
+      process.env.CLOCKIFY_API_KEY = 'test-key';
+      process.env.NORMALIZE_MONEY = 'false';
+
+      const config = new ConfigurationManager();
+      expect(config.isMoneyNormalizationEnabled()).toBe(false);
+    });
+
+    it('should enable normalization when NORMALIZE_MONEY=true', () => {
+      process.env.CLOCKIFY_API_KEY = 'test-key';
+      process.env.NORMALIZE_MONEY = 'true';
+
+      const config = new ConfigurationManager();
+      expect(config.isMoneyNormalizationEnabled()).toBe(true);
     });
   });
 });

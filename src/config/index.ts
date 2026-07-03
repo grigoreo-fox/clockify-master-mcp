@@ -78,6 +78,14 @@ export const ConfigSchema = z.object({
   // Logging
   logLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
+  // Money normalization (Clockify API minor units ÷100 for MCP consumers)
+  normalizeMoney: z
+    .boolean()
+    .default(true)
+    .describe(
+      'When true, MCP responses use major currency units (2500 RUB); writes expect major units too'
+    ),
+
   // Tool Visibility
   toolFiltering: z
     .object({
@@ -138,6 +146,7 @@ export class ConfigurationManager {
       cacheTTLSeconds: process.env.CACHE_TTL ? parseInt(process.env.CACHE_TTL) : undefined,
       rateLimitPerMinute: process.env.RATE_LIMIT ? parseInt(process.env.RATE_LIMIT) : undefined,
       logLevel: process.env.LOG_LEVEL as any,
+      normalizeMoney: process.env.NORMALIZE_MONEY !== 'false',
     };
 
     // Remove undefined values
@@ -275,6 +284,10 @@ export class ConfigurationManager {
     return this.config.toolFiltering;
   }
 
+  isMoneyNormalizationEnabled(): boolean {
+    return this.config.normalizeMoney;
+  }
+
   isProjectAllowed(projectId: string): boolean {
     const restrictions = this.config.restrictions;
 
@@ -368,5 +381,19 @@ export class ConfigurationManager {
   }
 }
 
-// Export singleton instance
-export const config = new ConfigurationManager();
+// Export singleton instance (lazy — avoids import-time failure when API key is unset in tests)
+let _config: ConfigurationManager | undefined;
+
+export function getConfig(): ConfigurationManager {
+  if (!_config) {
+    _config = new ConfigurationManager();
+  }
+  return _config;
+}
+
+/** @deprecated Prefer constructing ConfigurationManager directly or use getConfig() */
+export const config = new Proxy({} as ConfigurationManager, {
+  get(_target, prop, receiver) {
+    return Reflect.get(getConfig(), prop, receiver);
+  },
+});

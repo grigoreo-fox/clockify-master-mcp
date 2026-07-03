@@ -392,11 +392,13 @@ export class ClockifyTools {
           userId: schemas.objectIdSchema.describe('The user ID to add'),
           hourlyRate: z
             .object({
-              amount: z.number().describe('Hourly rate amount'),
-              currency: z.string().describe('Currency code (e.g., USD, EUR)'),
+              amount: z.number().describe(
+                'Hourly rate in major currency units when NORMALIZE_MONEY=true (e.g. 2500 RUB, not 250000)'
+              ),
+              currency: z.string().describe('Currency code (e.g., USD, EUR, RUB)'),
             })
             .optional()
-            .describe('Hourly rate for this user on this project'),
+            .describe('Billable hourly rate for this user on this project'),
         }),
         handler: async (input: any) => {
           // No restriction needed for adding users to projects
@@ -587,7 +589,7 @@ export class ClockifyTools {
               if (existing.projectId) {
                 data.projectId = existing.projectId;
               }
-            } catch (error) {
+            } catch {
               // If we can't fetch existing entry, proceed without project preservation
             }
           }
